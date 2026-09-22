@@ -1,0 +1,19 @@
+# Compilados y empaquetado
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Configuración local 
+src/main/resources/application-local.properties
+*.pem
+.env
+
+# IDE
+.vscode/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Sistema
+.DS_Store
