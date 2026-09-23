@@ -12,12 +12,39 @@ La aplicación **no gestiona credenciales por su cuenta**. Implementar bien un r
 
 En su lugar, la autenticación se delega en un proveedor externo (Firebase Authentication, Auth0, Keycloak o similar). El backend queda preparado para **validar los tokens que emita ese proveedor** y para autorizar los endpoints con Spring Security, de forma que quien despliegue el sistema solo tenga que enchufar la pieza que falta.
 
-| Código | Historia | Descripción |
-| --- | --- | --- |
-| HU-01 | Validación de tokens | Los endpoints protegidos aceptan únicamente peticiones con un token válido del proveedor. La validación de la firma se configura contra el proveedor, sin lógica propia de credenciales. |
-| HU-02 | Sincronización del usuario | En el primer acceso de un usuario autenticado se crea su `Usuario` local a partir de los datos del token, para poder asociarle reservas, participaciones e inscripciones. |
-| HU-03 | Autorización por roles | Los endpoints distinguen entre usuario y administrador, de modo que solo un administrador pueda gestionar pistas y torneos. |
-| HU-04 | Gestión del perfil | El usuario puede consultar y modificar sus datos personales (nombre, teléfono). |
+### HU-01. Validación de tokens
+
+La API solo atiende peticiones que presenten un token válido emitido por el proveedor configurado.
+
+- Sin token, o con un token expirado, mal firmado o de otro emisor, la respuesta es **401**.
+- **Toda ruta exige autenticación salvo las declaradas públicas de forma explícita.** El valor por defecto es denegar, de modo que cualquier endpoint que se añada en el futuro nace protegido.
+- La verificación se configura contra el proveedor (clave pública o `issuer-uri`). El sistema no almacena ni comprueba credenciales.
+- Existe un modo de desarrollo que permite trabajar sin proveedor externo, sin tocar el código de la aplicación.
+
+### HU-02. Sincronización del usuario
+
+La primera vez que alguien accede con un token válido, el sistema crea su usuario local para poder asociarle reservas, participaciones e inscripciones.
+
+- El usuario se identifica por el `sub` del token, nunca por el correo.
+- Si el `sub` no existe en la base de datos, se crea el usuario con los datos disponibles en el token y el rol básico. El rol **nunca** se toma del token.
+- El correo puede no venir en el token, y en ese caso el usuario se crea igualmente.
+- No existe un endpoint de registro: el alta en el proveedor es el registro, y los datos que el token no trae se completan en HU-04.
+
+### HU-03. Autorización por roles
+
+El sistema distingue entre usuario y administrador, de forma que solo un administrador pueda gestionar pistas y torneos.
+
+- El rol se lee de la base de datos, no del token, para que el club pueda administrarlo sin depender del proveedor.
+- Un cambio de rol tiene efecto en la siguiente petición, sin esperar a que caduque el token.
+- Un usuario autenticado sin el rol necesario recibe **403**, frente al **401** de quien no se ha autenticado.
+
+### HU-04. Gestión del perfil
+
+El usuario consulta y modifica sus datos personales (nombre, teléfono y correo).
+
+- `GET /users/me` y `PUT /users/me` operan siempre sobre el usuario del token: la ruta no admite identificadores de otros usuarios.
+- Es el punto donde se completan los datos que el token no proporciona, como el teléfono.
+- Los datos de entrada se validan antes de guardarse.
 
 ## EP-02. Gestión de pistas y disponibilidad
 
