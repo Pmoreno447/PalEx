@@ -18,6 +18,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column (nullable = true, length = 100)
     private String name;
 
     // Debe venir en el token sirve para asociar cada usuario
@@ -27,7 +28,7 @@ public class User {
     private String providerId;
 
     // Debe venir en el token
-    @Column(length = 255)
+    @Column(length = 255, unique = true)
     private String email;
 
     @Column (length = 20, unique = true)
