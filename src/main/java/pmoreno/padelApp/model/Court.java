@@ -37,8 +37,13 @@ public class Court {
     
     protected Court(){} // Exigido por JPA
 
-    public Court(Long id){
-        this.id = id;
+    public Court(String name, BigDecimal price, boolean active, int slotMinutes, LocalTime openTime, LocalTime closTime){
+        this.name = name;
+        this.price = price;
+        this.active = active;
+        this.slotMinutes = slotMinutes;
+        this.openTime = openTime;
+        this.closeTime = closTime;
     }
 
     public Long getId() {
