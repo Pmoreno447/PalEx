@@ -15,25 +15,25 @@ import jakarta.persistence.Table;
 public class Court {
     @Id 
     @GeneratedValue (strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
     @Column (nullable = false)
-    String name;
+    private String name;
 
     @Column(nullable = false, precision = 10, scale = 2)
-    BigDecimal price;
+    private BigDecimal price;
 
     // Es una primitiva no puede ser nulo no necesitamos anotación
-    boolean active;
+    private boolean active;
 
     @Column (nullable = false)
-    int slotMinutes;
+    private int slotMinutes;
 
     @Column (nullable = false)
-    LocalTime openTime;
+    private LocalTime openTime;
 
     @Column (nullable = false)
-    LocalTime closeTime;
+    private LocalTime closeTime;
     
     protected Court(){} // Exigido por JPA
 

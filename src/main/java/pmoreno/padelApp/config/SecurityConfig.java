@@ -21,6 +21,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PathRequest.toH2Console()).permitAll() // solo en dev estoy haciendo pruebas
                 .requestMatchers(HttpMethod.GET, "/courts").permitAll()
+                .requestMatchers(HttpMethod.GET, "/courts/*/availability").permitAll()
                 .requestMatchers("/users/**").authenticated()
                 .anyRequest().hasRole("ADMIN"))
             .oauth2ResourceServer(oauth2 -> oauth2.jwt((jwt) -> jwt.jwtAuthenticationConverter(userJwtConverter)))

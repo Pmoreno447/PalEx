@@ -3,10 +3,13 @@ package pmoreno.padelApp.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+import pmoreno.padelApp.dto.AvailabilityResponse;
 import pmoreno.padelApp.dto.CourtRequest;
 import pmoreno.padelApp.dto.CourtResponse;
 import pmoreno.padelApp.service.CourtService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.security.core.Authentication;
@@ -15,6 +18,8 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 
@@ -41,15 +46,23 @@ public class CourtController {
         return courtService.getCourts(false);
     }
 
+    @Valid 
     @PostMapping()
     public CourtResponse postCourt(@RequestBody CourtRequest courtRequest) {
         return courtService.createCourt(courtRequest);
     }
 
+    @Valid 
     @PatchMapping("/{courtId}")
     public CourtResponse updateCourt(@PathVariable Long courtId ,@RequestBody CourtRequest courtRequest){
         return courtService.updateCourt(courtId, courtRequest);
     }
+
+    @GetMapping("/{courtId}/availability")
+    public List<AvailabilityResponse> getCourtAvailability(@PathVariable Long courtId, @RequestParam LocalDate from, @RequestParam LocalDate to) {
+        return courtService.getCourtDisponibility(courtId, from, to);
+    }
+    
     
     
 }
