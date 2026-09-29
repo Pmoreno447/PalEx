@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import pmoreno.padelApp.dto.UserResponse;
 import pmoreno.padelApp.dto.UserUpdateRequest;
+import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.Role;
 import pmoreno.padelApp.model.User;
 import pmoreno.padelApp.repository.UserRepository;
@@ -113,21 +114,21 @@ public class UserServiceTests {
     void shoulNotUpdateNothing(){
         UserUpdateRequest updateRequest = new UserUpdateRequest("New Name", "+34987654321");
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> 
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> 
             {userService.updateMyUser("noProviderTestId", updateRequest);}
         );
     
-        assertEquals("[updateMyUser]: Usuario no sincronizado noProviderTestId", exception.getMessage());
+        assertEquals("Usuario noProviderTestId no sincronizado con la base de datos.", exception.getMessage());
     }
 
     @Test
     @DisplayName ("Should not return a user")
     void shouldNotReturntUser(){
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> 
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> 
             {userService.getMyUser("noProviderTestId");}
         );
     
-        assertEquals("[getMyUser]: Usuario no sincronizado: noProviderTestId", exception.getMessage());
+        assertEquals("Usuario noProviderTestId no sincronizado con la base de datos.", exception.getMessage());
     }
 
 }

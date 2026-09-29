@@ -24,12 +24,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 import pmoreno.padelApp.dto.AvailabilityResponse;
 import pmoreno.padelApp.dto.CourtRequest;
 import pmoreno.padelApp.dto.CourtResponse;
+import pmoreno.padelApp.exceptions.BadRequestException;
+import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.BookingState;
 import pmoreno.padelApp.model.Court;
 import pmoreno.padelApp.repository.BookingRepository;
@@ -139,11 +139,11 @@ public class CourtServiceTests {
     void shouldNotUpdateMissingCourt(){
         CourtRequest request = new CourtRequest("New Court", null, null, null, null, null);
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
             courtService.updateCourt(99L, request)
         );
 
-        assertEquals("[updateCourt]: Pista no encontrada", exception.getMessage());
+        assertEquals("Pista con id 99 no encontrada.", exception.getMessage());
     }
 
     @Test
@@ -184,11 +184,11 @@ public class CourtServiceTests {
     void shouldRejectFromInThePast(){
         LocalDate yesterday = LocalDate.now().minusDays(1);
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
+        BadRequestException exception = assertThrows(BadRequestException.class, () ->
             courtService.getCourtDisponibility(1L, yesterday, LocalDate.now())
         );
 
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals("Rango de fechas no válido", exception.getMessage());
         verifyNoInteractions(courtRepository, bookingRepository);
     }
 
@@ -197,11 +197,11 @@ public class CourtServiceTests {
     void shouldRejectToBeforeFrom(){
         LocalDate tomorrow = LocalDate.now().plusDays(1);
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
+        BadRequestException exception = assertThrows(BadRequestException.class, () ->
             courtService.getCourtDisponibility(1L, tomorrow, LocalDate.now())
         );
 
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals("Rango de fechas no válido", exception.getMessage());
         verifyNoInteractions(courtRepository, bookingRepository);
     }
 
@@ -210,11 +210,11 @@ public class CourtServiceTests {
     void shouldRejectBeyondMaxDaysAhead(){
         LocalDate today = LocalDate.now();
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
+        BadRequestException exception = assertThrows(BadRequestException.class, () ->
             courtService.getCourtDisponibility(1L, today, today.plusDays(MAX_DAYS_AHEAD + 1))
         );
 
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals("Rango de fechas no válido", exception.getMessage());
         verifyNoInteractions(courtRepository, bookingRepository);
     }
 
@@ -223,11 +223,11 @@ public class CourtServiceTests {
     void shouldFailWhenCourtNotFound(){
         LocalDate today = LocalDate.now();
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
             courtService.getCourtDisponibility(99L, today, today)
         );
 
-        assertEquals("[selectCourt]: Pista no encontrada", exception.getMessage());
+        assertEquals("Pista con id 99 no encontrada.", exception.getMessage());
         verifyNoInteractions(bookingRepository);
     }
 
@@ -238,11 +238,12 @@ public class CourtServiceTests {
         courtTest.setActive(false);
         when(courtRepository.findById(anyLong())).thenReturn(Optional.of(courtTest));
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
             courtService.getCourtDisponibility(1L, today, today)
         );
 
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        // Mismo mensaje que si no existiera, para no revelar que la pista existe (ADR-006)
+        assertEquals("Pista con id 1 no encontrada.", exception.getMessage());
         verifyNoInteractions(bookingRepository);
     }
 }

@@ -7,15 +7,15 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import pmoreno.padelApp.dto.AvailabilityResponse;
 import pmoreno.padelApp.dto.CourtRequest;
 import pmoreno.padelApp.dto.CourtResponse;
+import pmoreno.padelApp.exceptions.BadRequestException;
+import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.BookingState;
 import pmoreno.padelApp.model.Court;
 import pmoreno.padelApp.repository.BookingRepository;
@@ -56,7 +56,7 @@ public class CourtService {
     @Transactional 
     public CourtResponse updateCourt(Long courtId, CourtRequest courtRequest){
         Court c = courtRepository.findById(courtId)
-            .orElseThrow(() -> new IllegalStateException("[updateCourt]: Pista no encontrada"));
+            .orElseThrow(() -> new ResourceNotFoundException("Pista con id " + courtId + " no encontrada."));
 
         if(courtRequest.name() != null){
             c.setName(courtRequest.name());
@@ -87,14 +87,14 @@ public class CourtService {
         if(from.isBefore(LocalDate.now()) 
             || to.isBefore(from) 
             || to.isAfter(LocalDate.now().plusDays(maxDaysAhead))){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rango de fechas no válido");
+            throw new BadRequestException("Rango de fechas no válido");
         }
 
         Court c = courtRepository.findById(courtId)
-            .orElseThrow(() -> new IllegalStateException("[selectCourt]: Pista no encontrada"));
+            .orElseThrow(() ->  new ResourceNotFoundException("Pista con id " + courtId + " no encontrada."));
 
         if(!c.getActive()){
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "La pista está dada de baja");
+            throw new ResourceNotFoundException("Pista con id " + courtId + " no encontrada.");
         }
 
         LocalDateTime start = from.atTime(c.getOpenTime());
