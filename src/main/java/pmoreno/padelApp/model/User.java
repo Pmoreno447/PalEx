@@ -56,6 +56,16 @@ public class User {
         this.phone = tphNumber;
     }
 
+    public User(Long id, String name, String providerId, String email, String username, String phone, Role role) {
+        this.id = id;
+        this.name = name;
+        this.providerId = providerId;
+        this.email = email;
+        this.username = username;
+        this.phone = phone;
+        this.role = role;
+    }
+
     public Long getId() {
         return id;
     }
