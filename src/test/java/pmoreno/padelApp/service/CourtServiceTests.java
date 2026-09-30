@@ -78,6 +78,20 @@ public class CourtServiceTests {
     }
 
     @Test
+    @DisplayName("Should not create a court that opens after it closes")
+    void shouldNotCreateCourt_whenOpenTimeIsAfterCloseTime(){
+        CourtRequest request = new CourtRequest("Court Test", BigDecimal.valueOf(5.0), true, 90,
+                                                LocalTime.of(21, 0), LocalTime.of(16, 0));
+
+        BadRequestException exception = assertThrows(BadRequestException.class, () ->
+            courtService.createCourt(request)
+        );
+
+        assertEquals("La hora de cierre no puede ser anterior a la de apertura", exception.getMessage());
+        verify(courtRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("Admin should see all courts, including inactive ones")
     void adminShouldGetAllCourts(){
         when(courtRepository.findAll()).thenReturn(List.of(courtTest));
@@ -144,6 +158,36 @@ public class CourtServiceTests {
         );
 
         assertEquals("Pista con id 99 no encontrada.", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should not update only the close time to before the current open time")
+    void shouldNotUpdateCourt_whenNewCloseTimeIsBeforeCurrentOpenTime(){
+        when(courtRepository.findById(1L)).thenReturn(Optional.of(courtTest));
+
+        // courtTest abre a las 16:00: el request solo trae el cierre, el DTO no puede detectarlo
+        CourtRequest request = new CourtRequest(null, null, null, null, null, LocalTime.of(10, 0));
+
+        BadRequestException exception = assertThrows(BadRequestException.class, () ->
+            courtService.updateCourt(1L, request)
+        );
+
+        assertEquals("La hora de cierre no puede ser anterior a la de apertura", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should not update only the open time to after the current close time")
+    void shouldNotUpdateCourt_whenNewOpenTimeIsAfterCurrentCloseTime(){
+        when(courtRepository.findById(1L)).thenReturn(Optional.of(courtTest));
+
+        // courtTest cierra a las 19:00
+        CourtRequest request = new CourtRequest(null, null, null, null, LocalTime.of(20, 0), null);
+
+        BadRequestException exception = assertThrows(BadRequestException.class, () ->
+            courtService.updateCourt(1L, request)
+        );
+
+        assertEquals("La hora de cierre no puede ser anterior a la de apertura", exception.getMessage());
     }
 
     @Test

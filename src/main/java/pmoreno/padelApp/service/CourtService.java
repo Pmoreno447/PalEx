@@ -2,6 +2,7 @@ package pmoreno.padelApp.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayDeque;
 import java.util.EnumSet;
 import java.util.List;
@@ -35,6 +36,12 @@ public class CourtService {
         this.maxDaysAhead = maxDaysAhead;
     }
 
+    private void isTimeInvalid(LocalTime openTime, LocalTime closeTime){
+        if(!openTime.isBefore(closeTime)){
+            throw new BadRequestException("La hora de cierre no puede ser anterior a la de apertura");
+        }
+    }
+
     @Transactional(readOnly = true)
     public List<CourtResponse> getCourts(boolean isAdmin){
         List<Court> courts = isAdmin
@@ -48,6 +55,8 @@ public class CourtService {
 
     @Transactional 
     public CourtResponse createCourt(CourtRequest courtRequest){
+        isTimeInvalid(courtRequest.openTime(), courtRequest.closTime());
+
         Court c =  courtRepository.save(courtRequest.toModel());
 
         return CourtResponse.from(c);
@@ -76,6 +85,8 @@ public class CourtService {
         if(courtRequest.closTime() != null){
             c.setCloseTime(courtRequest.closTime());
         }
+
+        isTimeInvalid(c.getOpenTime(), c.getCloseTime());
 
         return CourtResponse.from(c);
 

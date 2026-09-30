@@ -2,7 +2,6 @@ package pmoreno.padelApp;
 
 import static org.mockito.Mockito.when;
 
-import java.time.LocalTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
