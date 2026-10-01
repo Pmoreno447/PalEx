@@ -8,7 +8,9 @@ Sus cuatro módulos son **independientes**, así que cada club activa solo los q
 
 ## Estado del proyecto
 
-En desarrollo, sin código todavía. Ahora mismo hay documentación de diseño y un roadmap por fases.
+En desarrollo, actualmente existe soporte para:
+- Gestión de usuarios mediante tokens JWT (Revisar EP-01 [aquí](./docs/roadmap.md))
+- Gestión de pistas y comprobar su disponibilidad (Revisar EP-02 [aquí](./docs/roadmap.md))
 
 ## Stack
 

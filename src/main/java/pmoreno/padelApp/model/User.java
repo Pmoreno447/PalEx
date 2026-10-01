@@ -18,6 +18,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column (nullable = true, length = 100)
     private String name;
 
     // Debe venir en el token sirve para asociar cada usuario
@@ -27,7 +28,7 @@ public class User {
     private String providerId;
 
     // Debe venir en el token
-    @Column(length = 255)
+    @Column(length = 255, unique = true)
     private String email;
 
     @Column (length = 20, unique = true)
@@ -53,6 +54,16 @@ public class User {
         this.id = id;
         this.name = name;
         this.phone = tphNumber;
+    }
+
+    public User(Long id, String name, String providerId, String email, String username, String phone, Role role) {
+        this.id = id;
+        this.name = name;
+        this.providerId = providerId;
+        this.email = email;
+        this.username = username;
+        this.phone = phone;
+        this.role = role;
     }
 
     public Long getId() {
