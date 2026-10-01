@@ -4,8 +4,6 @@ En este documento detallaremos los requisitos previstos y cómo abordarlos.
 
 El trabajo se agrupa en **épicas** (`EP-XX`), que son bloques funcionales del sistema, y estas a su vez en **historias de usuario** (`HU-XX`), que son las unidades de trabajo que se implementan y se prueban por separado. Los códigos son únicos y no se reutilizan: si una historia se descarta, su código se retira.
 
-Al final del documento se indica el **orden de implementación**, que no coincide con el orden en que aparecen las épicas.
-
 ## Resumen
 
 | Épica | Historias de usuario |
@@ -126,37 +124,3 @@ Funciones de apoyo que no pertenecen a ningún flujo concreto.
 | --- | --- | --- |
 | HU-26 | Factura de un pago | El usuario descarga la factura de un pago, tanto de una reserva como de una inscripción. |
 | HU-27 | Gestión de usuarios | Un administrador da de alta y de baja usuarios del club. |
-
-## Orden de implementación
-
-El orden lo marcan las dependencias: cada fase necesita la anterior, y la primera deja el sistema ya utilizable.
-
-### Fase 1. Reservar y cobrar
-
-`HU-01` → `HU-02` → `HU-03` → `HU-05` → `HU-07` → `HU-08` → `HU-09` → `HU-10` → `HU-11` → `HU-12`
-
-Es el mínimo que resuelve el problema original: reservar una pista y pagarla sin llamar a nadie. La seguridad va primero porque todo lo demás cuelga de saber quién hace cada petición, y las pistas antes que las reservas porque la disponibilidad se calcula a partir de su configuración. El cobro se prueba contra la implementación simulada de `HU-10`, de modo que la fase se puede cerrar sin contratar ninguna pasarela. `HU-12` va al final: sin el vencimiento, cualquier usuario que abandone el pago deja un turno bloqueado para siempre.
-
-### Fase 2. Cerrar el ciclo de la reserva
-
-`HU-06` → `HU-13` → `HU-04` → `HU-14`
-
-Los casos que la fase 1 deja abiertos: cancelar, dar de baja una pista con reservas vivas y gestionar el perfil. `HU-14` se adelanta aquí, aunque las estadísticas lleguen mucho después, porque los datos de los jugadores hay que empezar a recogerlos cuanto antes: sin partidos registrados, EP-06 no tendría nada que mostrar el día que se implemente.
-
-### Fase 3. Torneos
-
-`HU-15` → `HU-16` → `HU-18` → `HU-17` → `HU-19`
-
-Se apoya en el cobro y en el reembolso ya resueltos en las fases anteriores, de ahí que vaya después. `HU-20` queda fuera hasta decidir el formato de competición.
-
-### Fase 4. Acceso a la pista
-
-`HU-21` → `HU-22` → `HU-23`
-
-Depende de que la reserva se confirme correctamente, así que necesita la fase 1 cerrada. Es autónomo respecto a los torneos, de modo que puede adelantarse si interesa más que la fase 3.
-
-### Fase 5. Mejoras
-
-`HU-24` → `HU-25` → `HU-26` → `HU-27` → `HU-20`
-
-Funcionalidades que aportan valor pero que no impiden usar el sistema. `HU-25` es la única que arrastra una dependencia real, ya que necesita los resultados de `HU-24` y los jugadores de `HU-14`.
