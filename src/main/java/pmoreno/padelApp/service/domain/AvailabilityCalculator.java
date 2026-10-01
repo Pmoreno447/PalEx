@@ -6,7 +6,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
-import pmoreno.padelApp.dto.AvailabilityResponse;
+import pmoreno.padelApp.dto.Court.AvailabilityResponse;
 import pmoreno.padelApp.repository.projection.OccupiedSlot;
 
 

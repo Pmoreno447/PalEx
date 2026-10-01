@@ -14,8 +14,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import pmoreno.padelApp.dto.UserResponse;
-import pmoreno.padelApp.dto.UserUpdateRequest;
+import pmoreno.padelApp.dto.User.UserResponse;
+import pmoreno.padelApp.dto.User.UserUpdateRequest;
 import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.Role;
 import pmoreno.padelApp.model.User;

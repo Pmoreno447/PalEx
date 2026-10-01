@@ -4,9 +4,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
-import pmoreno.padelApp.dto.AvailabilityResponse;
-import pmoreno.padelApp.dto.CourtRequest;
-import pmoreno.padelApp.dto.CourtResponse;
+import pmoreno.padelApp.dto.Court.AvailabilityResponse;
+import pmoreno.padelApp.dto.Court.CourtCreateRequest;
+import pmoreno.padelApp.dto.Court.CourtResponse;
+import pmoreno.padelApp.dto.Court.CourtUpdateRequest;
 import pmoreno.padelApp.service.CourtService;
 
 import java.time.LocalDate;
@@ -48,13 +49,13 @@ public class CourtController {
 
     @Valid 
     @PostMapping()
-    public CourtResponse postCourt(@RequestBody CourtRequest courtRequest) {
+    public CourtResponse postCourt(@RequestBody CourtCreateRequest courtRequest) {
         return courtService.createCourt(courtRequest);
     }
 
     @Valid 
     @PatchMapping("/{courtId}")
-    public CourtResponse updateCourt(@PathVariable Long courtId ,@RequestBody CourtRequest courtRequest){
+    public CourtResponse updateCourt(@PathVariable Long courtId ,@RequestBody CourtUpdateRequest courtRequest){
         return courtService.updateCourt(courtId, courtRequest);
     }
 

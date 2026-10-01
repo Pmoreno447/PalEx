@@ -1,4 +1,4 @@
-package pmoreno.padelApp.dto;
+package pmoreno.padelApp.dto.Court;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
@@ -10,7 +10,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import pmoreno.padelApp.model.Court;
 
-public record CourtRequest(
+public record CourtUpdateRequest(
     @Size(min = 1, max = 100, message = "El nombre debe tener entre 1 y 100 caracteres")
     String name,
 
@@ -28,8 +28,8 @@ public record CourtRequest(
 
     LocalTime closTime
 ) {
-    public static CourtRequest from(Court court){
-        return new CourtRequest(
+    public static CourtUpdateRequest from(Court court){
+        return new CourtUpdateRequest(
             court.getName(), 
             court.getPrice(),
             court.getActive(), 

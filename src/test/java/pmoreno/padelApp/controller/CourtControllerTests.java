@@ -34,9 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import pmoreno.padelApp.config.SecurityConfig;
 import pmoreno.padelApp.config.UserJwtConverter;
-import pmoreno.padelApp.dto.AvailabilityResponse;
-import pmoreno.padelApp.dto.CourtRequest;
-import pmoreno.padelApp.dto.CourtResponse;
+import pmoreno.padelApp.dto.Court.AvailabilityResponse;
+import pmoreno.padelApp.dto.Court.CourtCreateRequest;
+import pmoreno.padelApp.dto.Court.CourtResponse;
+import pmoreno.padelApp.dto.Court.CourtUpdateRequest;
 import pmoreno.padelApp.exceptions.BadRequestException;
 import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.service.CourtService;
@@ -53,7 +54,10 @@ public class CourtControllerTests {
         {"name": "Pista Nueva", "price": 5.0, "active": true, "slotMinutes": 90,
          "openTime": "16:00", "closTime": "22:00"}
         """;
-    private static final CourtRequest COURT_REQUEST = new CourtRequest("Pista Nueva", new BigDecimal("5.0"), true, 90,
+    private static final CourtCreateRequest COURT_CREATE_REQUEST = new CourtCreateRequest("Pista Nueva", new BigDecimal("5.0"), true, 90,
+                                                                       LocalTime.of(16, 0), LocalTime.of(22, 0));
+
+    private static final CourtUpdateRequest COURT_UPDATE_REQUEST = new CourtUpdateRequest("Pista Nueva", new BigDecimal("5.0"), true, 90,
                                                                        LocalTime.of(16, 0), LocalTime.of(22, 0));
 
     // Pista con la apertura posterior al cierre
@@ -174,7 +178,7 @@ public class CourtControllerTests {
     @Test
     @DisplayName ("Should create a court when the user is admin")
     void shouldCreateCourt_whenUserIsAdmin(){
-        when(courtService.createCourt(COURT_REQUEST))
+        when(courtService.createCourt(COURT_CREATE_REQUEST))
             .thenReturn(new CourtResponse("Pista Nueva", new BigDecimal("5.0"), 90, LocalTime.of(16, 0), LocalTime.of(22, 0)));
 
         restTestClient.post()
@@ -193,7 +197,7 @@ public class CourtControllerTests {
                 .jsonPath("$.closeTime").isEqualTo("22:00:00");
 
         // El JSON se convierte en el CourtRequest esperado
-        verify(courtService).createCourt(COURT_REQUEST);
+        verify(courtService).createCourt(COURT_CREATE_REQUEST);
     }
 
     @Test
@@ -235,7 +239,7 @@ public class CourtControllerTests {
     @Test
     @DisplayName ("Should update a court when the user is admin")
     void shouldUpdateCourt_whenUserIsAdmin(){
-        when(courtService.updateCourt(1L, COURT_REQUEST))
+        when(courtService.updateCourt(1L, COURT_UPDATE_REQUEST))
             .thenReturn(new CourtResponse("Pista Nueva", new BigDecimal("5.0"), 90, LocalTime.of(16, 0), LocalTime.of(22, 0)));
 
         restTestClient.patch()
@@ -252,7 +256,7 @@ public class CourtControllerTests {
                 .jsonPath("$.closeTime").isEqualTo("22:00:00");
 
         // El id de la URL y el JSON llegan al service
-        verify(courtService).updateCourt(1L, COURT_REQUEST);
+        verify(courtService).updateCourt(1L, COURT_UPDATE_REQUEST);
     }
 
     @Test

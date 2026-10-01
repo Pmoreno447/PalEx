@@ -12,9 +12,10 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
 
-import pmoreno.padelApp.dto.AvailabilityResponse;
-import pmoreno.padelApp.dto.CourtRequest;
-import pmoreno.padelApp.dto.CourtResponse;
+import pmoreno.padelApp.dto.Court.AvailabilityResponse;
+import pmoreno.padelApp.dto.Court.CourtCreateRequest;
+import pmoreno.padelApp.dto.Court.CourtResponse;
+import pmoreno.padelApp.dto.Court.CourtUpdateRequest;
 import pmoreno.padelApp.exceptions.BadRequestException;
 import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.BookingState;
@@ -54,7 +55,7 @@ public class CourtService {
     }
 
     @Transactional 
-    public CourtResponse createCourt(CourtRequest courtRequest){
+    public CourtResponse createCourt(CourtCreateRequest courtRequest){
         isTimeInvalid(courtRequest.openTime(), courtRequest.closTime());
 
         Court c =  courtRepository.save(courtRequest.toModel());
@@ -63,7 +64,7 @@ public class CourtService {
     }
 
     @Transactional 
-    public CourtResponse updateCourt(Long courtId, CourtRequest courtRequest){
+    public CourtResponse updateCourt(Long courtId, CourtUpdateRequest courtRequest){
         Court c = courtRepository.findById(courtId)
             .orElseThrow(() -> new ResourceNotFoundException("Pista con id " + courtId + " no encontrada."));
 

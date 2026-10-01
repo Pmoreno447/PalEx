@@ -25,9 +25,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import pmoreno.padelApp.dto.AvailabilityResponse;
-import pmoreno.padelApp.dto.CourtRequest;
-import pmoreno.padelApp.dto.CourtResponse;
+import pmoreno.padelApp.dto.Court.AvailabilityResponse;
+import pmoreno.padelApp.dto.Court.CourtCreateRequest;
+import pmoreno.padelApp.dto.Court.CourtResponse;
+import pmoreno.padelApp.dto.Court.CourtUpdateRequest;
 import pmoreno.padelApp.exceptions.BadRequestException;
 import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.BookingState;
@@ -60,7 +61,7 @@ public class CourtServiceTests {
     void shouldCreateCourt(){
         Court newCourt = new Court("Court Test", BigDecimal.valueOf(5.0), false, 90, LocalTime.of(16, 0), LocalTime.of(21, 0));
 
-        CourtRequest courtRequest = CourtRequest.from(newCourt);
+        CourtCreateRequest courtRequest = CourtCreateRequest.from(newCourt);
 
         when(courtRepository.save(any(Court.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -80,7 +81,7 @@ public class CourtServiceTests {
     @Test
     @DisplayName("Should not create a court that opens after it closes")
     void shouldNotCreateCourt_whenOpenTimeIsAfterCloseTime(){
-        CourtRequest request = new CourtRequest("Court Test", BigDecimal.valueOf(5.0), true, 90,
+        CourtCreateRequest request = new CourtCreateRequest("Court Test", BigDecimal.valueOf(5.0), true, 90,
                                                 LocalTime.of(21, 0), LocalTime.of(16, 0));
 
         BadRequestException exception = assertThrows(BadRequestException.class, () ->
@@ -118,7 +119,7 @@ public class CourtServiceTests {
     void shouldUpdateOnlyIncludedFields(){
         when(courtRepository.findById(1L)).thenReturn(Optional.of(courtTest));
 
-        CourtRequest request = new CourtRequest("New Court", null, null, null, null, null);
+        CourtUpdateRequest request = new CourtUpdateRequest("New Court", null, null, null, null, null);
         CourtResponse response = courtService.updateCourt(1L, request);
 
         assertEquals("New Court", response.name());
@@ -136,7 +137,7 @@ public class CourtServiceTests {
     void shouldUpdateAllFields(){
         when(courtRepository.findById(1L)).thenReturn(Optional.of(courtTest));
 
-        CourtRequest request = new CourtRequest("New Court", BigDecimal.valueOf(20.0), false, 60,
+        CourtUpdateRequest request = new CourtUpdateRequest("New Court", BigDecimal.valueOf(20.0), false, 60,
                                                 LocalTime.of(9, 0), LocalTime.of(23, 0));
         CourtResponse response = courtService.updateCourt(1L, request);
 
@@ -151,7 +152,7 @@ public class CourtServiceTests {
     @Test
     @DisplayName("Should not update a court that does not exist")
     void shouldNotUpdateMissingCourt(){
-        CourtRequest request = new CourtRequest("New Court", null, null, null, null, null);
+        CourtUpdateRequest request = new CourtUpdateRequest("New Court", null, null, null, null, null);
 
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
             courtService.updateCourt(99L, request)
@@ -166,7 +167,7 @@ public class CourtServiceTests {
         when(courtRepository.findById(1L)).thenReturn(Optional.of(courtTest));
 
         // courtTest abre a las 16:00: el request solo trae el cierre, el DTO no puede detectarlo
-        CourtRequest request = new CourtRequest(null, null, null, null, null, LocalTime.of(10, 0));
+        CourtUpdateRequest request = new CourtUpdateRequest(null, null, null, null, null, LocalTime.of(10, 0));
 
         BadRequestException exception = assertThrows(BadRequestException.class, () ->
             courtService.updateCourt(1L, request)
@@ -181,7 +182,7 @@ public class CourtServiceTests {
         when(courtRepository.findById(1L)).thenReturn(Optional.of(courtTest));
 
         // courtTest cierra a las 19:00
-        CourtRequest request = new CourtRequest(null, null, null, null, LocalTime.of(20, 0), null);
+        CourtUpdateRequest request = new CourtUpdateRequest(null, null, null, null, LocalTime.of(20, 0), null);
 
         BadRequestException exception = assertThrows(BadRequestException.class, () ->
             courtService.updateCourt(1L, request)

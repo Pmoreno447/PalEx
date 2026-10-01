@@ -2,6 +2,8 @@ package pmoreno.padelApp;
 
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -22,7 +24,7 @@ import pmoreno.padelApp.config.SecurityConfig;
 import pmoreno.padelApp.config.UserJwtConverter;
 import pmoreno.padelApp.controller.CourtController;
 import pmoreno.padelApp.controller.UserController;
-import pmoreno.padelApp.dto.CourtRequest;
+import pmoreno.padelApp.dto.Court.CourtCreateRequest;
 import pmoreno.padelApp.service.CourtService;
 import pmoreno.padelApp.service.UserService;
 
@@ -80,7 +82,7 @@ public class SecurityConfigTest {
 
         @Test
         void getOtherEndpointWithoutAdminToken(){
-            CourtRequest courtRequest = new CourtRequest(null, null, null, null, null, null);
+            CourtCreateRequest courtRequest = new CourtCreateRequest("Test", BigDecimal.ONE, true, 60, LocalTime.of(11, 0), LocalTime.of(12, 0));
 
             restTestClient.post().uri("/courts")
                 .body(courtRequest)
@@ -96,7 +98,7 @@ public class SecurityConfigTest {
             when(userJwtConverter.convert(jwt))
                 .thenReturn(new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
 
-            CourtRequest courtRequest = new CourtRequest(null, null, null, null, null, null);
+            CourtCreateRequest courtRequest = new CourtCreateRequest("Test", BigDecimal.ONE, true, 60, LocalTime.of(11, 0), LocalTime.of(12, 0));
 
              restTestClient.post().uri("/courts")
                 .header("Authorization", "Bearer token")

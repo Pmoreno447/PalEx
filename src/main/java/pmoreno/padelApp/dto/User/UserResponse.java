@@ -1,4 +1,4 @@
-package pmoreno.padelApp.dto;
+package pmoreno.padelApp.dto.User;
 
 import pmoreno.padelApp.model.User;
 

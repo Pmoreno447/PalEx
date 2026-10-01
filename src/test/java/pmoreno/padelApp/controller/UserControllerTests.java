@@ -27,8 +27,8 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import pmoreno.padelApp.service.UserService;
 import pmoreno.padelApp.config.SecurityConfig;
 import pmoreno.padelApp.config.UserJwtConverter;
-import pmoreno.padelApp.dto.UserResponse;
-import pmoreno.padelApp.dto.UserUpdateRequest;
+import pmoreno.padelApp.dto.User.UserResponse;
+import pmoreno.padelApp.dto.User.UserUpdateRequest;
 import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 
 @Import (SecurityConfig.class)
@@ -135,6 +135,42 @@ public class UserControllerTests {
             .expectStatus().isBadRequest();
 
         // @Valid corta la petición antes de llegar al service
+        verify(userService, never()).updateMyUser(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should update only the phone when the name is not sent")
+    void shouldUpdateUser_whenOnlyPhoneIsSent(){
+        UserUpdateRequest request = new UserUpdateRequest(null, "+34987654321");
+        when(userService.updateMyUser("user-1", request))
+            .thenReturn(new UserResponse("Old Name", "test@example.com", "CoolTestUser", "+34987654321"));
+
+        restTestClient.patch()
+            .uri("/users/me")
+            .header("Authorization", "Bearer token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body("""
+                {"phone": "+34987654321"}
+                """)
+            .exchange()
+            .expectStatus().isOk();
+
+        verify(userService).updateMyUser("user-1", request);
+    }
+
+    @Test
+    @DisplayName("Should return bad request when the name is only spaces")
+    void shouldGetBadRequest_whenNameIsBlank(){
+        restTestClient.patch()
+            .uri("/users/me")
+            .header("Authorization", "Bearer token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body("""
+                {"name": "   "}
+                """)
+            .exchange()
+            .expectStatus().isBadRequest();
+
         verify(userService, never()).updateMyUser(any(), any());
     }
 }

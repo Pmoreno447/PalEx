@@ -3,8 +3,8 @@ package pmoreno.padelApp.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import pmoreno.padelApp.dto.UserResponse;
-import pmoreno.padelApp.dto.UserUpdateRequest;
+import pmoreno.padelApp.dto.User.UserResponse;
+import pmoreno.padelApp.dto.User.UserUpdateRequest;
 import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.User;
 import pmoreno.padelApp.repository.UserRepository;

@@ -1,7 +1,5 @@
 package pmoreno.padelApp.service.domain;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
@@ -13,7 +11,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import pmoreno.padelApp.dto.AvailabilityResponse;
+import pmoreno.padelApp.dto.Court.AvailabilityResponse;
 import pmoreno.padelApp.repository.projection.OccupiedSlot;
 
 public class AvailabilityCalculatorTest {

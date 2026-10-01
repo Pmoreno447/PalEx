@@ -1,4 +1,4 @@
-package pmoreno.padelApp.dto;
+package pmoreno.padelApp.dto.Court;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
