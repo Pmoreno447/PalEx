@@ -73,12 +73,12 @@ El flujo principal de la aplicación: reservar una pista pagando. Incluye el cic
 
 Al igual que con la sesión, **el sistema no implementa ninguna pasarela de pago concreta**. Se define un puerto de pagos (iniciar un cobro, confirmarlo y reembolsarlo) junto a una implementación simulada para desarrollo, de forma que quien despliegue el proyecto solo tenga que escribir el adaptador de Stripe, Redsys o la plataforma que prefiera. Lo que sí es responsabilidad del sistema, y no del adaptador, es que confirmar un pago dos veces no confirme la reserva dos veces.
 
-La historia central de la épica es `HU-09`; `HU-10`, `HU-11` y `HU-12` son las piezas que la sostienen y se listan aparte por ser trabajo independiente y verificable por separado.
+Las historias siguen el orden en que se construye el flujo: primero se aparta el turno (`HU-09`), después se paga (`HU-10`) y se confirma (`HU-11`). Cada una se puede terminar y probar por separado.
 
 | Código | Historia | Descripción |
 | --- | --- | --- |
-| HU-09 | Realizar una reserva | El usuario reserva un turno libre y lo paga. La reserva queda primero en estado pendiente y se confirma cuando el pago se completa. El servidor valida que el turno encaje en el horario y en la rejilla de la pista, y garantiza que no se reserve dos veces el mismo turno. |
-| HU-10 | Puerto de pagos | Definición de la interfaz de cobro y de una implementación simulada que permita desarrollar y probar el flujo completo sin depender de una pasarela real. |
+| HU-09 | Reservar un turno | El usuario reserva un turno libre, que queda en estado pendiente de pago. El servidor valida que el turno encaje en el horario y en la rejilla de la pista, y garantiza que no se reserve dos veces el mismo turno. |
+| HU-10 | Pagar una reserva | El usuario paga su reserva pendiente. Incluye la definición del puerto de pagos y una implementación simulada, que permite desarrollar y probar el flujo completo sin depender de una pasarela real. |
 | HU-11 | Confirmación del pago | El sistema atiende la notificación de pago completado y confirma la reserva. El mismo aviso puede llegar varias veces, así que el proceso no debe confirmar ni cobrar dos veces. |
 | HU-12 | Vencimiento de reservas pendientes | Una reserva que no se paga en un plazo determinado se libera automáticamente, para que el turno no quede bloqueado indefinidamente. |
 | HU-13 | Cancelación y reembolso | Una reserva confirmada puede cancelarse, lo que libera el turno y devuelve el importe a través del puerto de pagos. |
