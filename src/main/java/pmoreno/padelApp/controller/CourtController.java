@@ -10,9 +10,11 @@ import pmoreno.padelApp.dto.Court.CourtResponse;
 import pmoreno.padelApp.dto.Court.CourtUpdateRequest;
 import pmoreno.padelApp.service.CourtService;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 
 
@@ -47,15 +50,21 @@ public class CourtController {
         return courtService.getCourts(false);
     }
 
-    @Valid 
     @PostMapping()
-    public CourtResponse postCourt(@RequestBody CourtCreateRequest courtRequest) {
-        return courtService.createCourt(courtRequest);
+    public ResponseEntity<CourtResponse> postCourt(@Valid @RequestBody CourtCreateRequest courtRequest) {
+        CourtResponse created = courtService.createCourt(courtRequest);
+
+        // Location: /courts/{id} construido a partir de la URL de esta petición
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+            .path("/{id}")
+            .buildAndExpand(created.id())
+            .toUri();
+
+        return ResponseEntity.created(location).body(created);
     }
 
-    @Valid 
     @PatchMapping("/{courtId}")
-    public CourtResponse updateCourt(@PathVariable Long courtId ,@RequestBody CourtUpdateRequest courtRequest){
+    public CourtResponse updateCourt(@PathVariable Long courtId, @Valid @RequestBody CourtUpdateRequest courtRequest){
         return courtService.updateCourt(courtId, courtRequest);
     }
 

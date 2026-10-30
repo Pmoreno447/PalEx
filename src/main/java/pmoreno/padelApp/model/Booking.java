@@ -2,6 +2,7 @@ package pmoreno.padelApp.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,6 +23,10 @@ public class Booking {
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Identificador que se expone en la API; el id secuencial queda solo para uso interno
+    @Column (nullable = false, unique = true, updatable = false)
+    private UUID publicId = UUID.randomUUID();
+
     @Column (nullable = false)
     private LocalDateTime initDateTime;
 
@@ -39,10 +44,28 @@ public class Booking {
     @JoinColumn (name = "court_id", nullable = false)
     private Court court;
 
+    @ManyToOne (fetch = FetchType.LAZY, optional = false)
+    @JoinColumn (name = "user_id", nullable = false)
+    private User user;
+
     protected Booking(){} // Exigido por JPA
+
+    public Booking(LocalDateTime initDateTime, LocalDateTime endDateTime, BigDecimal amount,
+                   BookingState state, Court court, User user){
+        this.initDateTime = initDateTime;
+        this.endDateTime = endDateTime;
+        this.amount = amount;
+        this.state = state;
+        this.court = court;
+        this.user = user;
+    }
 
     public Long getId(){
         return id;
+    }
+
+    public UUID getPublicId(){
+        return publicId;
     }
 
     public LocalDateTime getInitDateTime(){
@@ -75,6 +98,14 @@ public class Booking {
 
     public void setState(BookingState state){
         this.state = state;
+    }
+
+    public User getUser(){
+        return this.user;
+    }
+
+    public void setUser(User user){
+        this.user = user;
     }
 
     public Court getCourt(){

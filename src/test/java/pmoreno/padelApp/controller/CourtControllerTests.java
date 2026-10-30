@@ -103,16 +103,16 @@ public class CourtControllerTests {
 
         // Pistas visibles para un usuario
         courtListUser = new ArrayList<>();
-        CourtResponse c1 = new CourtResponse("Pista 1", BigDecimal.ONE, 90, LocalTime.of(16, 0), LocalTime.of(22, 0));
-        CourtResponse c2 = new CourtResponse("Pista 2", BigDecimal.TWO, 180, LocalTime.of(16, 0), LocalTime.of(22, 0));
-        CourtResponse c3 = new CourtResponse("Pista 3", BigDecimal.TEN, 90, LocalTime.of(8, 0), LocalTime.of(16, 0));
-        CourtResponse c4 = new CourtResponse("Pista 4", BigDecimal.TWO, 180, LocalTime.of(8, 0), LocalTime.of(16, 0));
+        CourtResponse c1 = new CourtResponse(1L,"Pista 1", BigDecimal.ONE, 90, LocalTime.of(16, 0), LocalTime.of(22, 0));
+        CourtResponse c2 = new CourtResponse(2L, "Pista 2", BigDecimal.TWO, 180, LocalTime.of(16, 0), LocalTime.of(22, 0));
+        CourtResponse c3 = new CourtResponse(3L, "Pista 3", BigDecimal.TEN, 90, LocalTime.of(8, 0), LocalTime.of(16, 0));
+        CourtResponse c4 = new CourtResponse(4L, "Pista 4", BigDecimal.TWO, 180, LocalTime.of(8, 0), LocalTime.of(16, 0));
 
         Collections.addAll(courtListUser, c1, c2, c3, c4);
 
         // Pistas visibles para un administrador
         courtListAdmin = new ArrayList<>();
-        CourtResponse c5 = new CourtResponse("Pista 5", BigDecimal.TWO, 90, LocalTime.of(16, 0), LocalTime.of(22, 0));
+        CourtResponse c5 = new CourtResponse(5L, "Pista 5", BigDecimal.TWO, 90, LocalTime.of(16, 0), LocalTime.of(22, 0));
 
         courtListAdmin.addAll(courtListUser);
         courtListAdmin.add(c5);
@@ -179,7 +179,7 @@ public class CourtControllerTests {
     @DisplayName ("Should create a court when the user is admin")
     void shouldCreateCourt_whenUserIsAdmin(){
         when(courtService.createCourt(COURT_CREATE_REQUEST))
-            .thenReturn(new CourtResponse("Pista Nueva", new BigDecimal("5.0"), 90, LocalTime.of(16, 0), LocalTime.of(22, 0)));
+            .thenReturn(new CourtResponse(1L, "Pista Nueva", new BigDecimal("5.0"), 90, LocalTime.of(16, 0), LocalTime.of(22, 0)));
 
         restTestClient.post()
             .uri("/courts")
@@ -188,7 +188,7 @@ public class CourtControllerTests {
             .body(COURT_JSON)
             .exchange()
             .expectStatus()
-            .isOk()
+            .isCreated()
             .expectBody()
                 .jsonPath("$.name").isEqualTo("Pista Nueva")
                 .jsonPath("$.price").isEqualTo(5.0)
@@ -240,7 +240,7 @@ public class CourtControllerTests {
     @DisplayName ("Should update a court when the user is admin")
     void shouldUpdateCourt_whenUserIsAdmin(){
         when(courtService.updateCourt(1L, COURT_UPDATE_REQUEST))
-            .thenReturn(new CourtResponse("Pista Nueva", new BigDecimal("5.0"), 90, LocalTime.of(16, 0), LocalTime.of(22, 0)));
+            .thenReturn(new CourtResponse(1L, "Pista Nueva", new BigDecimal("5.0"), 90, LocalTime.of(16, 0), LocalTime.of(22, 0)));
 
         restTestClient.patch()
             .uri("/courts/1")

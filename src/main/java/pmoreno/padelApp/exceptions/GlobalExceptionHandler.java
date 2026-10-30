@@ -21,4 +21,9 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleBadRequest(BadRequestException bException){
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, bException.getMessage());
     }
+
+    @ExceptionHandler 
+    public  ProblemDetail handleConflic(ConflictException cException){
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, cException.getMessage());
+    }
 }
