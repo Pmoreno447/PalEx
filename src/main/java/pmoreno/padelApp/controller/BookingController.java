@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import jakarta.validation.Valid;
+import pmoreno.padelApp.dto.Booking.BookingCheckoutResponse;
 import pmoreno.padelApp.dto.Booking.BookingCreateRequest;
 import pmoreno.padelApp.dto.Booking.BookingResponse;
 import pmoreno.padelApp.service.BookingService;
@@ -31,15 +32,15 @@ public class BookingController {
     }
 
     @PostMapping()
-    public ResponseEntity<BookingResponse> postBooking(Authentication authentication, @Valid @RequestBody BookingCreateRequest bookingRequest) {
-        BookingResponse bookingResponse = bookingService.createNewBooking(authentication.getName(), bookingRequest);
-        
+    public ResponseEntity<BookingCheckoutResponse> postBooking(Authentication authentication, @Valid @RequestBody BookingCreateRequest bookingRequest) {
+        BookingCheckoutResponse checkoutResponse = bookingService.createNewBooking(authentication.getName(), bookingRequest);
+
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{bookingId}")
-            .buildAndExpand(bookingResponse.id())
+            .buildAndExpand(checkoutResponse.id())
             .toUri();
 
-        return ResponseEntity.created(location).body(bookingResponse);
+        return ResponseEntity.created(location).body(checkoutResponse);
     }
 
     @GetMapping("/{bookingId}")

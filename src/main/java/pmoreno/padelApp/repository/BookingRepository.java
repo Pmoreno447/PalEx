@@ -43,5 +43,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Solo encuentra la reserva si pertenece al usuario: si no es suya se trata como inexistente
     Optional<Booking> findByPublicIdAndUserProviderId(UUID publicId, String providerId);
 
+    // Optional: el evento de Stripe puede referirse a una reserva que ya no existe (p. ej. tras reiniciar la BD en memoria)
+    Optional<Booking> findByPublicId(UUID publicId);
+
     long countByUserAndState(User user, BookingState state);
 }

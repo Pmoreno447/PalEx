@@ -26,4 +26,15 @@ public class GlobalExceptionHandler {
     public  ProblemDetail handleConflic(ConflictException cException){
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, cException.getMessage());
     }
+
+    // 502: el servidor está bien pero falló un servicio externo. No se expone el mensaje de la pasarela
+    @ExceptionHandler
+    public ProblemDetail handlePaymentGateway(PaymentGatewayException pException){
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, pException.getMessage());
+    }
+
+    @ExceptionHandler
+    public ProblemDetail handleSignatureVerificationException(BadSignatureException sException){
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, sException.getMessage());
+    }
 }

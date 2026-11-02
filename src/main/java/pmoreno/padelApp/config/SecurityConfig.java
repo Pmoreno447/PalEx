@@ -24,6 +24,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/courts/*/availability").permitAll()
                 .requestMatchers("/users/**").authenticated()
                 .requestMatchers("/bookings/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/handler/stripe").permitAll() // lo llama Stripe, sin JWT: se autentica con la firma del evento
                 .anyRequest().hasRole("ADMIN"))
             .oauth2ResourceServer(oauth2 -> oauth2.jwt((jwt) -> jwt.jwtAuthenticationConverter(userJwtConverter)))
             .csrf((csrf) -> csrf.disable())
