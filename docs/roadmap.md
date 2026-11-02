@@ -10,7 +10,7 @@ El trabajo se agrupa en **épicas** (`EP-XX`), que son bloques funcionales del s
 | --- | --- |
 | **EP-01.** Gestión de la sesión | HU-01 Validación de tokens · HU-02 Sincronización del usuario · HU-03 Autorización por roles · HU-04 Gestión del perfil |
 | **EP-02.** Gestión de pistas y disponibilidad | HU-05 Alta de una pista · HU-06 Baja de una pista · HU-07 Modificación de una pista · HU-08 Consulta de disponibilidad |
-| **EP-03.** Gestión de reservas | HU-09 Realizar una reserva · HU-10 Puerto de pagos · HU-11 Confirmación del pago · HU-12 Vencimiento de reservas pendientes · HU-13 Cancelación y reembolso · HU-14 Registro de los jugadores |
+| **EP-03.** Gestión de reservas | HU-09 Realizar una reserva · HU-10 Pagar una reserva · HU-11 Confirmación del pago · HU-12 Vencimiento de reservas pendientes · HU-13 Cancelación y reembolso · HU-14 Registro de los jugadores |
 | **EP-04.** Gestión de torneos | HU-15 Alta de un torneo · HU-16 Modificación de un torneo · HU-17 Baja de un torneo · HU-18 Inscripción en un torneo · HU-19 Ocupación de pistas · HU-20 Generación del cuadro |
 | **EP-05.** Gestión del acceso a la pista | HU-21 Generación del código · HU-22 Validación del código · HU-23 Activación del módulo |
 | **EP-06.** Estadísticas H2H | HU-24 Registro del resultado · HU-25 Consulta del historial |
@@ -71,17 +71,17 @@ Configuración de las pistas del club y cálculo de los huecos libres. Es la bas
 
 El flujo principal de la aplicación: reservar una pista pagando. Incluye el ciclo de vida completo de la reserva, desde que se aparta el turno hasta que se confirma, vence o se cancela.
 
-Al igual que con la sesión, **el sistema no implementa ninguna pasarela de pago concreta**. Se define un puerto de pagos (iniciar un cobro, confirmarlo y reembolsarlo) junto a una implementación simulada para desarrollo, de forma que quien despliegue el proyecto solo tenga que escribir el adaptador de Stripe, Redsys o la plataforma que prefiera. Lo que sí es responsabilidad del sistema, y no del adaptador, es que confirmar un pago dos veces no confirme la reserva dos veces.
+Los pagos se hacen con **Stripe** como única pasarela (ADR-009). El cobro y la recepción de los eventos de Stripe quedan separados del resto de la lógica de reservas, para que cambiar de proveedor no obligue a tocar el dominio. Lo que sí es responsabilidad del sistema, y no de la pasarela, es que confirmar un pago dos veces no confirme la reserva dos veces.
 
 Las historias siguen el orden en que se construye el flujo: primero se aparta el turno (`HU-09`), después se paga (`HU-10`) y se confirma (`HU-11`). Cada una se puede terminar y probar por separado.
 
 | Código | Historia | Descripción |
 | --- | --- | --- |
 | HU-09 | Reservar un turno | El usuario reserva un turno libre, que queda en estado pendiente de pago. El servidor valida que el turno encaje en el horario y en la rejilla de la pista, y garantiza que no se reserve dos veces el mismo turno. |
-| HU-10 | Pagar una reserva | El usuario paga su reserva pendiente. Incluye la definición del puerto de pagos y una implementación simulada, que permite desarrollar y probar el flujo completo sin depender de una pasarela real. |
+| HU-10 | Pagar una reserva | El usuario paga su reserva pendiente en Stripe Checkout. Al reservar se crea la sesión de pago y se devuelve la URL a la que redirigir al usuario. |
 | HU-11 | Confirmación del pago | El sistema atiende la notificación de pago completado y confirma la reserva. El mismo aviso puede llegar varias veces, así que el proceso no debe confirmar ni cobrar dos veces. |
-| HU-12 | Vencimiento de reservas pendientes | Una reserva que no se paga en un plazo determinado se libera automáticamente, para que el turno no quede bloqueado indefinidamente. |
-| HU-13 | Cancelación y reembolso | Una reserva confirmada puede cancelarse, lo que libera el turno y devuelve el importe a través del puerto de pagos. |
+| HU-12 | Vencimiento de reservas pendientes | Una reserva que no se paga en un plazo determinado se libera automáticamente, para que el turno no quede bloqueado indefinidamente. El plazo es el de la sesión de pago de Stripe, que avisa al vencer. |
+| HU-13 | Cancelación y reembolso | Una reserva confirmada puede cancelarse, lo que libera el turno y devuelve el importe a través de Stripe. |
 | HU-14 | Registro de los jugadores | Quien reserva indica con quién juega y contra quién, guardando el equipo de cada participante. Es el dato que después alimenta las estadísticas de EP-06. |
 
 ## EP-04. Gestión de torneos

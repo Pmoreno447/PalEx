@@ -1,6 +1,7 @@
 package pmoreno.padelApp.service;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -45,11 +46,13 @@ public class BookingService {
     private final StripeClient stripeClient;
     private final int maxDaysAhead;
     private final int maxPendingBookings;
+    private final int paymentMinutes;
     private final String frontendUrl;
 
     public BookingService(BookingRepository bookingRepository, CourtRepository courtRepository, UserRepository userRepository, StripeClient stripeClient,
                           @Value("${app.booking.max-days-ahead}") int maxDaysAhead,
                           @Value("${app.booking.max-pending}") int maxPendingBookings,
+                          @Value("${app.booking.payment-minutes}") int paymentMinutes,
                           @Value("${app.frontend-url}") String frontendUrl){
         this.bookingRepository = bookingRepository;
         this.courtRepository = courtRepository;
@@ -57,6 +60,7 @@ public class BookingService {
         this.stripeClient = stripeClient;
         this.maxDaysAhead = maxDaysAhead;
         this.maxPendingBookings = maxPendingBookings;
+        this.paymentMinutes = paymentMinutes;
         this.frontendUrl = frontendUrl;
     }
 
@@ -132,6 +136,9 @@ public class BookingService {
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(bookingUrl)
                 .setCancelUrl(bookingUrl + "?cancelled=true")
+                // Plazo para pagar: al vencer, Stripe manda checkout.session.expired y la reserva libera el turno (HU-12).
+                // Stripe solo admite entre 30 min y 24 h; sin fijarlo serían 24 h con el turno bloqueado
+                .setExpiresAt(Instant.now().plus(paymentMinutes, ChronoUnit.MINUTES).getEpochSecond())
                 // Stripe lo devuelve tal cual en los eventos del webhook: así se sabe a qué reserva corresponde
                 .setClientReferenceId(saved.getPublicId().toString())
                 // Marca la sesión como de una reserva: el webhook recibe todas las sesiones de la cuenta y así distingue las nuestras
