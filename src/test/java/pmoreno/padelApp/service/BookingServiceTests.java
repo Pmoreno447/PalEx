@@ -21,6 +21,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.stripe.model.checkout.Session;
+
+import pmoreno.padelApp.dto.Booking.BookingCheckoutResponse;
 import pmoreno.padelApp.dto.Booking.BookingCreateRequest;
 import pmoreno.padelApp.dto.Booking.BookingResponse;
 import pmoreno.padelApp.exceptions.BadRequestException;
@@ -49,6 +52,9 @@ public class BookingServiceTests {
     @Mock
     private UserRepository userRepository;
 
+    @Mock 
+    private StripeService stripeService;
+
     private BookingService bookingService;
 
     private User userTest;
@@ -62,7 +68,7 @@ public class BookingServiceTests {
 
     @BeforeEach
     void setUp(){
-        bookingService = new BookingService(bookingRepository, courtRepository, userRepository, MAX_DAYS_AHEAD, MAX_PENDING);
+        bookingService = new BookingService(bookingRepository, courtRepository, userRepository, stripeService, MAX_DAYS_AHEAD, MAX_PENDING);
         userTest = new User(1L, "Test Name", "user-1", "test@example.com", "CoolTestUser", "+34123456789", Role.USER);
         // Abre a las 09:00 con turnos de 90 min: 09:00, 10:30, 12:00, 13:30...
         courtTest = new Court("Court Test", BigDecimal.valueOf(12.0), true, 90, LocalTime.of(9, 0), LocalTime.of(23, 0));
@@ -75,8 +81,11 @@ public class BookingServiceTests {
         when(courtRepository.findById(1L)).thenReturn(Optional.of(courtTest));
         when(bookingRepository.existsOverlapping(any(), any(), any(), any())).thenReturn(false);
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
+        Session session = new Session();
+        session.setUrl("https://checkout.test/session");
+        when(stripeService.bookingPayment(any(Booking.class))).thenReturn(session);
 
-        bookingService.createNewBooking("user-1", new BookingCreateRequest(1L, tomorrowAt(13, 30).withSecond(30)));
+        BookingCheckoutResponse response = bookingService.createNewBooking("user-1", new BookingCreateRequest(1L, tomorrowAt(13, 30).withSecond(30)));
 
         ArgumentCaptor<Booking> captor = ArgumentCaptor.forClass(Booking.class);
         verify(bookingRepository).save(captor.capture());
@@ -87,6 +96,7 @@ public class BookingServiceTests {
         assertEquals(BookingState.PENDING, saved.getState());
         assertEquals(BigDecimal.valueOf(12.0), saved.getAmount());
         assertEquals(userTest, saved.getUser());
+        assertEquals("https://checkout.test/session", response.checkoutUrl());
     }
 
     @Test

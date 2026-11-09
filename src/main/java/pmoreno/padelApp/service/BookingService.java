@@ -15,17 +15,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.stripe.StripeClient;
-import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
-import com.stripe.param.checkout.SessionCreateParams;
 
 import pmoreno.padelApp.dto.Booking.BookingCheckoutResponse;
 import pmoreno.padelApp.dto.Booking.BookingCreateRequest;
 import pmoreno.padelApp.dto.Booking.BookingResponse;
 import pmoreno.padelApp.exceptions.BadRequestException;
 import pmoreno.padelApp.exceptions.ConflictException;
-import pmoreno.padelApp.exceptions.PaymentGatewayException;
 import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.Booking;
 import pmoreno.padelApp.model.BookingState;
@@ -37,31 +33,26 @@ import pmoreno.padelApp.repository.UserRepository;
 
 @Service 
 public class BookingService {
+    private final StripeService stripeService;
     private static final Logger log = LoggerFactory.getLogger(BookingService.class);
     public static final String PAYMENT_TYPE_KEY = "type";
     public static final String PAYMENT_TYPE_BOOKING = "booking";
     private final BookingRepository bookingRepository;
     private final CourtRepository courtRepository;
     private final UserRepository userRepository;
-    private final StripeClient stripeClient;
     private final int maxDaysAhead;
     private final int maxPendingBookings;
-    private final int paymentMinutes;
-    private final String frontendUrl;
 
-    public BookingService(BookingRepository bookingRepository, CourtRepository courtRepository, UserRepository userRepository, StripeClient stripeClient,
+
+    public BookingService(BookingRepository bookingRepository, CourtRepository courtRepository, UserRepository userRepository, StripeService stripeService,
                           @Value("${app.booking.max-days-ahead}") int maxDaysAhead,
-                          @Value("${app.booking.max-pending}") int maxPendingBookings,
-                          @Value("${app.booking.payment-minutes}") int paymentMinutes,
-                          @Value("${app.frontend-url}") String frontendUrl){
+                          @Value("${app.booking.max-pending}") int maxPendingBookings){
         this.bookingRepository = bookingRepository;
         this.courtRepository = courtRepository;
         this.userRepository = userRepository;
-        this.stripeClient = stripeClient;
         this.maxDaysAhead = maxDaysAhead;
         this.maxPendingBookings = maxPendingBookings;
-        this.paymentMinutes = paymentMinutes;
-        this.frontendUrl = frontendUrl;
+        this.stripeService = stripeService;
     }
 
     // La pista ya llega comprobada (existe y está activa): aquí se mira la fecha y si el turno está libre
@@ -127,45 +118,8 @@ public class BookingService {
         
         Booking saved = bookingRepository.save(booking);
 
-        //AHORA PASAMOS A PROCEDER AL PAGO
-        // Al salir hacia Stripe el frontend pierde su estado: el id vuelve en la URL a la que Stripe redirige
-        String bookingUrl = frontendUrl + "/bookings/" + saved.getPublicId();
-
-        SessionCreateParams params =
-            SessionCreateParams.builder()
-                .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl(bookingUrl)
-                .setCancelUrl(bookingUrl + "?cancelled=true")
-                // Plazo para pagar: al vencer, Stripe manda checkout.session.expired y la reserva libera el turno (HU-12).
-                // Stripe solo admite entre 30 min y 24 h; sin fijarlo serían 24 h con el turno bloqueado
-                .setExpiresAt(Instant.now().plus(paymentMinutes, ChronoUnit.MINUTES).getEpochSecond())
-                // Stripe lo devuelve tal cual en los eventos del webhook: así se sabe a qué reserva corresponde
-                .setClientReferenceId(saved.getPublicId().toString())
-                // Marca la sesión como de una reserva: el webhook recibe todas las sesiones de la cuenta y así distingue las nuestras
-                .putMetadata(PAYMENT_TYPE_KEY, PAYMENT_TYPE_BOOKING)
-                .addLineItem(
-                    SessionCreateParams.LineItem.builder()
-                        .setQuantity(1L)
-                        .setPriceData(
-                            SessionCreateParams.LineItem.PriceData.builder()
-                                .setCurrency("eur")
-                                .setUnitAmount(saved.getAmount().movePointRight(2).longValueExact()) // precio en cents
-                                .setProductData(
-                                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                                        .setName("Reserva " + court.getName())
-                                        .build())   // ProductData
-                                .build())           // PriceData
-                        .build())                   // LineItem
-                .build();                           // SessionCreateParams
-
-        
-        // Se relanza como RuntimeException para que @Transactional deshaga la reserva si Stripe falla
-        Session session;
-        try {
-            session = stripeClient.checkout().sessions().create(params);
-        } catch (StripeException e) {
-            throw new PaymentGatewayException("No se pudo iniciar el pago", e);
-        }
+        //Gestionamos pago
+        Session session = stripeService.bookingPayment(saved);
 
         return new BookingCheckoutResponse(saved.getPublicId(), session.getUrl());
     }
