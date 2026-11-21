@@ -28,7 +28,7 @@ Historias de usuario completadas. El detalle de cada una está en el [roadmap](.
 
 ## EP-04. Gestión de torneos
 
-- [ ] HU-15 Alta de un torneo
+- [x] HU-15 Alta de un torneo
 - [ ] HU-16 Modificación de un torneo
 - [ ] HU-17 Baja de un torneo
 - [ ] HU-18 Inscripción en un torneo
