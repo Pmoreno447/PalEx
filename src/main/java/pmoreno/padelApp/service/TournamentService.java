@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import pmoreno.padelApp.dto.Tournament.TournamentCreateRequest;
 import pmoreno.padelApp.dto.Tournament.TournamentResponse;
 import pmoreno.padelApp.exceptions.BadRequestException;
@@ -32,6 +33,7 @@ public class TournamentService {
         this.bookingRepository = bookingRepository;
     }
 
+    @Transactional 
     public TournamentResponse createTournament(TournamentCreateRequest tournamentCreateRequest){
         // Comprueba si la fecha de fin es posterior a la de inicio
         if (!tournamentCreateRequest.endDate().isAfter(tournamentCreateRequest.startDate())) {

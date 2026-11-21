@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,13 +15,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
+
 
 @Entity 
 public class Tournament {
     @Id
     @GeneratedValue  (strategy = GenerationType.IDENTITY)
     private long id;
+
+    // Identificador que se expone en la API; el id secuencial queda solo para uso interno
+    @Column (nullable = false, unique = true, updatable = false)
+    private UUID publicId = UUID.randomUUID();
 
     @Column (nullable = false)
     private String name;
@@ -61,6 +66,10 @@ public class Tournament {
 
     public long getId(){
         return id;
+    }
+
+    public UUID getPublicId(){
+        return publicId;
     }
 
     public String getName(){

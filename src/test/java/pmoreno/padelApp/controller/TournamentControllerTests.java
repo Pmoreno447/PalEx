@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -102,8 +103,9 @@ public class TournamentControllerTests {
     @DisplayName ("Should create a tournament when the user is admin")
     void shouldCreateTournament_whenUserIsAdmin(){
         CourtResponse court = new CourtResponse(1L, "Pista 1", BigDecimal.TEN, 90, LocalTime.of(9, 0), LocalTime.of(23, 0));
+        UUID tournamentId = UUID.randomUUID();
         when(tournamentService.createTournament(any()))
-            .thenReturn(new TournamentResponse(1L, "Torneo Nuevo", "**Torneo** de prueba", START, END,
+            .thenReturn(new TournamentResponse(tournamentId, "Torneo Nuevo", "**Torneo** de prueba", START, END,
                                                new BigDecimal("15.0"), 16, List.of(court)));
 
         restTestClient.post()
@@ -115,7 +117,7 @@ public class TournamentControllerTests {
             .expectStatus()
             .isCreated()
             .expectHeader()
-                .valueMatches("Location", ".*/tournaments/1")
+                .valueMatches("Location", ".*/tournaments/" + tournamentId)
             .expectBody()
                 .jsonPath("$.name").isEqualTo("Torneo Nuevo")
                 .jsonPath("$.courts[0].name").isEqualTo("Pista 1");

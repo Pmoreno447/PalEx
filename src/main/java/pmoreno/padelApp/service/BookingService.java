@@ -34,8 +34,6 @@ import pmoreno.padelApp.repository.UserRepository;
 public class BookingService {
     private final StripeService stripeService;
     private static final Logger log = LoggerFactory.getLogger(BookingService.class);
-    public static final String PAYMENT_TYPE_KEY = "type";
-    public static final String PAYMENT_TYPE_BOOKING = "booking";
     private final BookingRepository bookingRepository;
     private final CourtRepository courtRepository;
     private final UserRepository userRepository;
