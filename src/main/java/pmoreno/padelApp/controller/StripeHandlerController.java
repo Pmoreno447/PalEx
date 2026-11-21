@@ -12,6 +12,8 @@ import com.stripe.model.checkout.Session;
 
 import pmoreno.padelApp.exceptions.BadSignatureException;
 import pmoreno.padelApp.service.BookingService;
+import pmoreno.padelApp.service.StripeService;
+import pmoreno.padelApp.service.TournamentInscriptionService;
 
 import java.util.UUID;
 
@@ -30,11 +32,14 @@ import org.springframework.web.bind.annotation.RequestHeader;
 public class StripeHandlerController {
     private static final Logger log = LoggerFactory.getLogger(StripeHandlerController.class);
     private final BookingService bookingService;
+    private final TournamentInscriptionService tournamentInscriptionService;
     private final StripeClient stripeClient;
     private final String endpointSecret;
 
-    public StripeHandlerController(@Value("${stripe.secret-endpoint-key}") String endpointSecret, StripeClient stripeClient, BookingService bookingService){
+    public StripeHandlerController(@Value("${stripe.secret-endpoint-key}") String endpointSecret, StripeClient stripeClient,
+                                   BookingService bookingService, TournamentInscriptionService tournamentInscriptionService){
         this.bookingService = bookingService;
+        this.tournamentInscriptionService = tournamentInscriptionService;
         this.endpointSecret = endpointSecret;
         this.stripeClient = stripeClient;
     }
@@ -60,16 +65,20 @@ public class StripeHandlerController {
         switch (event.getType()) {
             case "checkout.session.completed":
                 Session sessionConfirmed = (Session) stripeObject;
-                if(isBooking(sessionConfirmed)){
-                    UUID publicIdConfirm = UUID.fromString(sessionConfirmed.getClientReferenceId());
-                    bookingService.confirmBooking(publicIdConfirm);
+                String typeConfirmed = paymentType(sessionConfirmed);
+                if(StripeService.PAYMENT_TYPE_BOOKING.equals(typeConfirmed)){
+                    bookingService.confirmBooking(referenceId(sessionConfirmed));
+                } else if(StripeService.PAYMENT_TYPE_TOURNAMENT.equals(typeConfirmed)){
+                    tournamentInscriptionService.confirmInscription(referenceId(sessionConfirmed));
                 }
                 break;
             case "checkout.session.expired":
                 Session sessionExpired = (Session) stripeObject;
-                if(isBooking(sessionExpired)){
-                    UUID publicIdExpired = UUID.fromString(sessionExpired.getClientReferenceId());
-                    bookingService.expireBooking(publicIdExpired);
+                String typeExpired = paymentType(sessionExpired);
+                if(StripeService.PAYMENT_TYPE_BOOKING.equals(typeExpired)){
+                    bookingService.expireBooking(referenceId(sessionExpired));
+                } else if(StripeService.PAYMENT_TYPE_TOURNAMENT.equals(typeExpired)){
+                    tournamentInscriptionService.expireInscription(referenceId(sessionExpired));
                 }
                 break;
             default:
@@ -79,10 +88,15 @@ public class StripeHandlerController {
         return ResponseEntity.ok().build();
     }
 
-    // Solo las sesiones creadas al reservar llevan la marca. Las demás de la cuenta (otra app, un Payment Link...) se ignoran con 200
-    private boolean isBooking(Session session){
-        return session.getMetadata() != null
-            && BookingService.PAYMENT_TYPE_BOOKING.equals(session.getMetadata().get(BookingService.PAYMENT_TYPE_KEY));
+    // Qué se ha pagado, según la marca que pone StripeService al crear la sesión. Las sesiones sin marca
+    // (otra app de la cuenta, un Payment Link...) devuelven null y no entran en ningún if: se ignoran con 200
+    private String paymentType(Session session){
+        return session.getMetadata() == null ? null : session.getMetadata().get(StripeService.PAYMENT_TYPE_KEY);
+    }
+
+    // El publicId de la reserva o la inscripción, que viaja como client_reference_id
+    private UUID referenceId(Session session){
+        return UUID.fromString(session.getClientReferenceId());
     }
     
 }

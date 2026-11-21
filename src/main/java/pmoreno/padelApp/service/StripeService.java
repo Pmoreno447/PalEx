@@ -13,11 +13,14 @@ import com.stripe.param.checkout.SessionCreateParams;
 
 import pmoreno.padelApp.exceptions.PaymentGatewayException;
 import pmoreno.padelApp.model.Booking;
+import pmoreno.padelApp.model.Tournament;
+import pmoreno.padelApp.model.TournamentRegistration;
 
 @Service 
 public class StripeService {
     public static final String PAYMENT_TYPE_KEY = "type";
     public static final String PAYMENT_TYPE_BOOKING = "booking";
+    public static final String PAYMENT_TYPE_TOURNAMENT = "tournament";
     private final String frontendUrl;
     private final int paymentMinutes;
     private final StripeClient stripeClient;
@@ -60,6 +63,43 @@ public class StripeService {
                 .build();                           // SessionCreateParams
 
         
+        // Se relanza como RuntimeException para que @Transactional deshaga la reserva si Stripe falla
+        Session session;
+        try {
+            session = stripeClient.checkout().sessions().create(params);
+        } catch (StripeException e) {
+            throw new PaymentGatewayException("No se pudo iniciar el pago", e);
+        }
+
+        return session;
+    }
+
+    public Session tournamentPayment(TournamentRegistration tournamentRegistration){
+        String tournamentUrl = frontendUrl + "/inscription/" + tournamentRegistration.getPublicId();
+
+        SessionCreateParams params =
+            SessionCreateParams.builder()
+                .setMode(SessionCreateParams.Mode.PAYMENT)
+                .setSuccessUrl(tournamentUrl)
+                .setExpiresAt(Instant.now().plus(paymentMinutes, ChronoUnit.MINUTES).getEpochSecond())
+                .setClientReferenceId(tournamentRegistration.getPublicId().toString())
+                // Marca la sesión como de una inscripción a un torneo: el webhook recibe todas las sesiones de la cuenta y así distingue las nuestras
+                .putMetadata(PAYMENT_TYPE_KEY, PAYMENT_TYPE_TOURNAMENT)
+                .addLineItem(
+                    SessionCreateParams.LineItem.builder()
+                        .setQuantity(1L)
+                        .setPriceData(
+                            SessionCreateParams.LineItem.PriceData.builder()
+                            .setCurrency("eur")
+                            .setUnitAmount(tournamentRegistration.getAmount().movePointRight(2).longValueExact())
+                            .setProductData(
+                                SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                    .setName("Inscripción en " + tournamentRegistration.getTournament().getName())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
         // Se relanza como RuntimeException para que @Transactional deshaga la reserva si Stripe falla
         Session session;
         try {
