@@ -4,15 +4,13 @@ En este documento detallaremos los requisitos previstos y cómo abordarlos.
 
 El trabajo se agrupa en **épicas** (`EP-XX`), que son bloques funcionales del sistema, y estas a su vez en **historias de usuario** (`HU-XX`), que son las unidades de trabajo que se implementan y se prueban por separado. Los códigos son únicos y no se reutilizan: si una historia se descarta, su código se retira.
 
-Al final del documento se indica el **orden de implementación**, que no coincide con el orden en que aparecen las épicas.
-
 ## Resumen
 
 | Épica | Historias de usuario |
 | --- | --- |
 | **EP-01.** Gestión de la sesión | HU-01 Validación de tokens · HU-02 Sincronización del usuario · HU-03 Autorización por roles · HU-04 Gestión del perfil |
 | **EP-02.** Gestión de pistas y disponibilidad | HU-05 Alta de una pista · HU-06 Baja de una pista · HU-07 Modificación de una pista · HU-08 Consulta de disponibilidad |
-| **EP-03.** Gestión de reservas | HU-09 Realizar una reserva · HU-10 Puerto de pagos · HU-11 Confirmación del pago · HU-12 Vencimiento de reservas pendientes · HU-13 Cancelación y reembolso · HU-14 Registro de los jugadores |
+| **EP-03.** Gestión de reservas | HU-09 Realizar una reserva · HU-10 Pagar una reserva · HU-11 Confirmación del pago · HU-12 Vencimiento de reservas pendientes · HU-13 Cancelación y reembolso · HU-14 Registro de los jugadores · HU-28 Reservas simultáneas del mismo turno |
 | **EP-04.** Gestión de torneos | HU-15 Alta de un torneo · HU-16 Modificación de un torneo · HU-17 Baja de un torneo · HU-18 Inscripción en un torneo · HU-19 Ocupación de pistas · HU-20 Generación del cuadro |
 | **EP-05.** Gestión del acceso a la pista | HU-21 Generación del código · HU-22 Validación del código · HU-23 Activación del módulo |
 | **EP-06.** Estadísticas H2H | HU-24 Registro del resultado · HU-25 Consulta del historial |
@@ -73,18 +71,19 @@ Configuración de las pistas del club y cálculo de los huecos libres. Es la bas
 
 El flujo principal de la aplicación: reservar una pista pagando. Incluye el ciclo de vida completo de la reserva, desde que se aparta el turno hasta que se confirma, vence o se cancela.
 
-Al igual que con la sesión, **el sistema no implementa ninguna pasarela de pago concreta**. Se define un puerto de pagos (iniciar un cobro, confirmarlo y reembolsarlo) junto a una implementación simulada para desarrollo, de forma que quien despliegue el proyecto solo tenga que escribir el adaptador de Stripe, Redsys o la plataforma que prefiera. Lo que sí es responsabilidad del sistema, y no del adaptador, es que confirmar un pago dos veces no confirme la reserva dos veces.
+Los pagos se hacen con **Stripe** como única pasarela (ADR-009). El cobro y la recepción de los eventos de Stripe quedan separados del resto de la lógica de reservas, para que cambiar de proveedor no obligue a tocar el dominio. Lo que sí es responsabilidad del sistema, y no de la pasarela, es que confirmar un pago dos veces no confirme la reserva dos veces.
 
-La historia central de la épica es `HU-09`; `HU-10`, `HU-11` y `HU-12` son las piezas que la sostienen y se listan aparte por ser trabajo independiente y verificable por separado.
+Las historias siguen el orden en que se construye el flujo: primero se aparta el turno (`HU-09`), después se paga (`HU-10`) y se confirma (`HU-11`). Cada una se puede terminar y probar por separado.
 
 | Código | Historia | Descripción |
 | --- | --- | --- |
-| HU-09 | Realizar una reserva | El usuario reserva un turno libre y lo paga. La reserva queda primero en estado pendiente y se confirma cuando el pago se completa. El servidor valida que el turno encaje en el horario y en la rejilla de la pista, y garantiza que no se reserve dos veces el mismo turno. |
-| HU-10 | Puerto de pagos | Definición de la interfaz de cobro y de una implementación simulada que permita desarrollar y probar el flujo completo sin depender de una pasarela real. |
+| HU-09 | Reservar un turno | El usuario reserva un turno libre, que queda en estado pendiente de pago. El servidor valida que el turno encaje en el horario y en la rejilla de la pista, y que no esté ya ocupado. |
+| HU-10 | Pagar una reserva | El usuario paga su reserva pendiente en Stripe Checkout. Al reservar se crea la sesión de pago y se devuelve la URL a la que redirigir al usuario. |
 | HU-11 | Confirmación del pago | El sistema atiende la notificación de pago completado y confirma la reserva. El mismo aviso puede llegar varias veces, así que el proceso no debe confirmar ni cobrar dos veces. |
-| HU-12 | Vencimiento de reservas pendientes | Una reserva que no se paga en un plazo determinado se libera automáticamente, para que el turno no quede bloqueado indefinidamente. |
-| HU-13 | Cancelación y reembolso | Una reserva confirmada puede cancelarse, lo que libera el turno y devuelve el importe a través del puerto de pagos. |
+| HU-12 | Vencimiento de reservas pendientes | Una reserva que no se paga en un plazo determinado se libera automáticamente, para que el turno no quede bloqueado indefinidamente. El plazo es el de la sesión de pago de Stripe, que avisa al vencer. |
+| HU-13 | Cancelación y reembolso | Una reserva confirmada puede cancelarse, lo que libera el turno y devuelve el importe a través de Stripe. |
 | HU-14 | Registro de los jugadores | Quien reserva indica con quién juega y contra quién, guardando el equipo de cada participante. Es el dato que después alimenta las estadísticas de EP-06. |
+| HU-28 | Reservas simultáneas del mismo turno | Si dos usuarios reservan a la vez turnos que se solapan en la misma pista, solo una de las reservas sale adelante y la otra recibe el conflicto. Comprobar la disponibilidad y guardar la reserva debe ser atómico, para que ninguna petición vea el turno libre mientras otra lo está ocupando. |
 
 ## EP-04. Gestión de torneos
 
@@ -126,37 +125,3 @@ Funciones de apoyo que no pertenecen a ningún flujo concreto.
 | --- | --- | --- |
 | HU-26 | Factura de un pago | El usuario descarga la factura de un pago, tanto de una reserva como de una inscripción. |
 | HU-27 | Gestión de usuarios | Un administrador da de alta y de baja usuarios del club. |
-
-## Orden de implementación
-
-El orden lo marcan las dependencias: cada fase necesita la anterior, y la primera deja el sistema ya utilizable.
-
-### Fase 1. Reservar y cobrar
-
-`HU-01` → `HU-02` → `HU-03` → `HU-05` → `HU-07` → `HU-08` → `HU-09` → `HU-10` → `HU-11` → `HU-12`
-
-Es el mínimo que resuelve el problema original: reservar una pista y pagarla sin llamar a nadie. La seguridad va primero porque todo lo demás cuelga de saber quién hace cada petición, y las pistas antes que las reservas porque la disponibilidad se calcula a partir de su configuración. El cobro se prueba contra la implementación simulada de `HU-10`, de modo que la fase se puede cerrar sin contratar ninguna pasarela. `HU-12` va al final: sin el vencimiento, cualquier usuario que abandone el pago deja un turno bloqueado para siempre.
-
-### Fase 2. Cerrar el ciclo de la reserva
-
-`HU-06` → `HU-13` → `HU-04` → `HU-14`
-
-Los casos que la fase 1 deja abiertos: cancelar, dar de baja una pista con reservas vivas y gestionar el perfil. `HU-14` se adelanta aquí, aunque las estadísticas lleguen mucho después, porque los datos de los jugadores hay que empezar a recogerlos cuanto antes: sin partidos registrados, EP-06 no tendría nada que mostrar el día que se implemente.
-
-### Fase 3. Torneos
-
-`HU-15` → `HU-16` → `HU-18` → `HU-17` → `HU-19`
-
-Se apoya en el cobro y en el reembolso ya resueltos en las fases anteriores, de ahí que vaya después. `HU-20` queda fuera hasta decidir el formato de competición.
-
-### Fase 4. Acceso a la pista
-
-`HU-21` → `HU-22` → `HU-23`
-
-Depende de que la reserva se confirme correctamente, así que necesita la fase 1 cerrada. Es autónomo respecto a los torneos, de modo que puede adelantarse si interesa más que la fase 3.
-
-### Fase 5. Mejoras
-
-`HU-24` → `HU-25` → `HU-26` → `HU-27` → `HU-20`
-
-Funcionalidades que aportan valor pero que no impiden usar el sistema. `HU-25` es la única que arrastra una dependencia real, ya que necesita los resultados de `HU-24` y los jugadores de `HU-14`.
