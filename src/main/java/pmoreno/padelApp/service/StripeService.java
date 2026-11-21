@@ -37,7 +37,6 @@ public class StripeService {
             SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(bookingUrl)
-                .setCancelUrl(bookingUrl + "?cancelled=true")
                 // Plazo para pagar: al vencer, Stripe manda checkout.session.expired y la reserva libera el turno (HU-12).
                 // Stripe solo admite entre 30 min y 24 h; sin fijarlo serían 24 h con el turno bloqueado
                 .setExpiresAt(Instant.now().plus(paymentMinutes, ChronoUnit.MINUTES).getEpochSecond())
