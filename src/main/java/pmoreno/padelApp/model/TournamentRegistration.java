@@ -49,6 +49,9 @@ public class TournamentRegistration {
     @Column (nullable = false)
     private BookingState state;
 
+    @Column(unique = true)
+    private String paymentIntentId;
+
     protected TournamentRegistration(){} // Exigido por JPA
 
     public TournamentRegistration(Tournament tournament, User user, LocalDateTime registeredAt,
@@ -106,5 +109,13 @@ public class TournamentRegistration {
 
     public void setState(BookingState state){
         this.state = state;
+    }
+
+    public String getPaymentIntentId(){
+        return paymentIntentId;
+    }
+
+    public void setPaymentIntentId(String paymentIntentId){
+        this.paymentIntentId = paymentIntentId;
     }
 }

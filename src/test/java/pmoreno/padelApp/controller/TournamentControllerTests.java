@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import pmoreno.padelApp.config.SecurityConfig;
 import pmoreno.padelApp.config.UserJwtConverter;
 import pmoreno.padelApp.dto.Court.CourtResponse;
+import pmoreno.padelApp.dto.Tournament.TournamentListResponse;
 import pmoreno.padelApp.dto.Tournament.TournamentResponse;
 import pmoreno.padelApp.exceptions.ConflictException;
 import pmoreno.padelApp.exceptions.ResourceNotFoundException;
@@ -162,5 +163,97 @@ public class TournamentControllerTests {
             .thenThrow(new ConflictException("Error al crear torneo. El plazo ya contiene reservas"));
 
         postAsAdmin(TOURNAMENT_JSON, 409);
+    }
+
+    // ---------- GET /tournaments/{id} ----------
+
+    private TournamentResponse tournamentResponse(UUID id){
+        CourtResponse court = new CourtResponse(1L, "Pista 1", BigDecimal.TEN, 90, LocalTime.of(9, 0), LocalTime.of(23, 0));
+        return new TournamentResponse(id, "Torneo Nuevo", "**Torneo** de prueba", START, END,
+                                      new BigDecimal("15.0"), 16, List.of(court));
+    }
+
+    @Test
+    @DisplayName ("Should return a tournament without a token, as a non admin")
+    void shouldGetTournament_whenAnonymous(){
+        UUID id = UUID.randomUUID();
+        when(tournamentService.getTournament(id, false)).thenReturn(tournamentResponse(id));
+
+        restTestClient.get()
+            .uri("/tournaments/{id}", id)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody()
+                .jsonPath("$.id").isEqualTo(id.toString())
+                .jsonPath("$.name").isEqualTo("Torneo Nuevo");
+
+        verify(tournamentService).getTournament(id, false);
+    }
+
+    @Test
+    @DisplayName ("Should ask for the tournament as admin when the user is admin")
+    void shouldGetTournamentAsAdmin_whenUserIsAdmin(){
+        UUID id = UUID.randomUUID();
+        when(tournamentService.getTournament(id, true)).thenReturn(tournamentResponse(id));
+
+        restTestClient.get()
+            .uri("/tournaments/{id}", id)
+            .header("Authorization", "Bearer tokenAdmin")
+            .exchange()
+            .expectStatus()
+            .isOk();
+
+        verify(tournamentService).getTournament(id, true);
+    }
+
+    @Test
+    @DisplayName ("Should return not found when the tournament cannot be seen")
+    void shouldGetNotFound_whenTournamentCannotBeSeen(){
+        UUID id = UUID.randomUUID();
+        when(tournamentService.getTournament(id, false)).thenThrow(new ResourceNotFoundException("Torneo no encontrado"));
+
+        restTestClient.get()
+            .uri("/tournaments/{id}", id)
+            .header("Authorization", "Bearer tokenUser")
+            .exchange()
+            .expectStatus()
+            .isNotFound();
+    }
+
+    // ---------- GET /tournaments ----------
+
+    @Test
+    @DisplayName ("Should list tournaments without a token, as a non admin")
+    void shouldListTournaments_whenAnonymous(){
+        TournamentListResponse tournament = new TournamentListResponse(UUID.randomUUID(), "Torneo Nuevo", START, END,
+                                                                       new BigDecimal("15.0"), 16);
+        when(tournamentService.getTournaments(false)).thenReturn(List.of(tournament));
+
+        restTestClient.get()
+            .uri("/tournaments")
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody()
+                .jsonPath("$.length()").isEqualTo(1)
+                .jsonPath("$[0].name").isEqualTo("Torneo Nuevo");
+
+        verify(tournamentService).getTournaments(false);
+    }
+
+    @Test
+    @DisplayName ("Should list tournaments as admin when the user is admin")
+    void shouldListTournamentsAsAdmin_whenUserIsAdmin(){
+        when(tournamentService.getTournaments(true)).thenReturn(List.of());
+
+        restTestClient.get()
+            .uri("/tournaments")
+            .header("Authorization", "Bearer tokenAdmin")
+            .exchange()
+            .expectStatus()
+            .isOk();
+
+        verify(tournamentService).getTournaments(true);
     }
 }

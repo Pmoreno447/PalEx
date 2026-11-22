@@ -3,11 +3,13 @@ package pmoreno.padelApp.service;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.transaction.Transactional;
 import pmoreno.padelApp.dto.Tournament.TournamentCreateRequest;
+import pmoreno.padelApp.dto.Tournament.TournamentListResponse;
 import pmoreno.padelApp.dto.Tournament.TournamentResponse;
 import pmoreno.padelApp.exceptions.BadRequestException;
 import pmoreno.padelApp.exceptions.ConflictException;
@@ -15,6 +17,7 @@ import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.BookingState;
 import pmoreno.padelApp.model.Court;
 import pmoreno.padelApp.model.Tournament;
+import pmoreno.padelApp.model.TournamentState;
 import pmoreno.padelApp.repository.BookingRepository;
 import pmoreno.padelApp.repository.CourtRepository;
 import pmoreno.padelApp.repository.TournamentRepository;
@@ -65,5 +68,27 @@ public class TournamentService {
                                         
         Tournament saved = tournamentRepository.save(t);
         return TournamentResponse.from(saved);
+    }
+
+    @Transactional (readOnly = true)
+    public TournamentResponse getTournament(UUID publicId, boolean isAdmin){
+        // El admin ve cualquier torneo; el resto solo los abiertos. Si no lo puede ver, 404 como si no existiera (ADR-006)
+        Tournament tournament = (isAdmin
+                ? tournamentRepository.findByPublicId(publicId)
+                : tournamentRepository.findByPublicIdAndState(publicId, TournamentState.OPEN))
+            .orElseThrow(() -> new ResourceNotFoundException("Torneo no encontrado"));
+        return TournamentResponse.from(tournament);
+    }
+
+    // Misma regla que al consultar uno: el admin ve todos, el resto solo los abiertos
+    @Transactional (readOnly = true)
+    public List<TournamentListResponse> getTournaments(boolean isAdmin){
+        List<Tournament> tournaments = isAdmin
+            ? tournamentRepository.findAllByOrderByStartDateAsc()
+            : tournamentRepository.findByStateOrderByStartDateAsc(TournamentState.OPEN);
+
+        return tournaments.stream()
+            .map(TournamentListResponse::from)
+            .toList();
     }
 }

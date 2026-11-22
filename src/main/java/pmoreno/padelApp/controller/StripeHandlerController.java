@@ -43,6 +43,7 @@ public class StripeHandlerController {
         this.endpointSecret = endpointSecret;
         this.stripeClient = stripeClient;
     }
+
     @PostMapping
     public ResponseEntity<Void> stripeHandler(@RequestBody String payload, @RequestHeader("Stripe-Signature") String sigHeader) {
         Event event = null;
@@ -66,10 +67,11 @@ public class StripeHandlerController {
             case "checkout.session.completed":
                 Session sessionConfirmed = (Session) stripeObject;
                 String typeConfirmed = paymentType(sessionConfirmed);
+                String paymentIntentId = sessionConfirmed.getPaymentIntent();
                 if(StripeService.PAYMENT_TYPE_BOOKING.equals(typeConfirmed)){
                     bookingService.confirmBooking(referenceId(sessionConfirmed));
                 } else if(StripeService.PAYMENT_TYPE_TOURNAMENT.equals(typeConfirmed)){
-                    tournamentInscriptionService.confirmInscription(referenceId(sessionConfirmed));
+                    tournamentInscriptionService.confirmInscription(referenceId(sessionConfirmed), paymentIntentId);
                 }
                 break;
             case "checkout.session.expired":

@@ -2,18 +2,22 @@ package pmoreno.padelApp.service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.stripe.exception.StripeException;
+import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
+import com.stripe.net.RequestOptions;
 import com.stripe.StripeClient;
+import com.stripe.param.RefundCreateParams;
+import com.stripe.param.RefundListParams;
 import com.stripe.param.checkout.SessionCreateParams;
 
 import pmoreno.padelApp.exceptions.PaymentGatewayException;
 import pmoreno.padelApp.model.Booking;
-import pmoreno.padelApp.model.Tournament;
 import pmoreno.padelApp.model.TournamentRegistration;
 
 @Service 
@@ -109,5 +113,41 @@ public class StripeService {
         }
 
         return session;
+    }
+
+
+    public Refund tournamentRefund(TournamentRegistration tournamentRegistration){
+        // Lo que se guarda al pagar es el PaymentIntent (pi_...), no el cargo (ch_...)
+        RefundCreateParams params =
+            RefundCreateParams.builder()
+                .setPaymentIntent(tournamentRegistration.getPaymentIntentId())
+                .build();
+
+        // La clave cubre dos cancelaciones simultáneas: Stripe solo ejecuta una
+        RequestOptions options =
+            RequestOptions.builder()
+                .setIdempotencyKey("refund" + tournamentRegistration.getPublicId())
+                .build();
+
+        Refund refund;
+        try {
+            // Stripe olvida la clave a las 24 h: si ya hay una devolución hecha o en curso, no se crea otra
+            Optional<Refund> existing = stripeClient.refunds().list(
+                    RefundListParams.builder()
+                        .setPaymentIntent(tournamentRegistration.getPaymentIntentId())
+                        .build())
+                .getData().stream()
+                .filter(r -> "succeeded".equals(r.getStatus()) || "pending".equals(r.getStatus()))
+                .findFirst();
+            if(existing.isPresent()){
+                return existing.get();
+            }
+
+            refund = stripeClient.refunds().create(params, options);
+        } catch (StripeException e) {
+            throw new PaymentGatewayException("No se pudo iniciar la devolución", e);
+        }
+
+        return refund;
     }
 }

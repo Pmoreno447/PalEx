@@ -22,6 +22,7 @@ public class SecurityConfig {
                 .requestMatchers(PathRequest.toH2Console()).permitAll() // solo en dev estoy haciendo pruebas
                 .requestMatchers(HttpMethod.GET, "/courts").permitAll()
                 .requestMatchers(HttpMethod.GET, "/courts/*/availability").permitAll()
+                .requestMatchers(HttpMethod.GET, "/tournaments", "/tournaments/*").permitAll() // público: sin sesión se ven solo los abiertos
                 .requestMatchers("/users/**").authenticated()
                 .requestMatchers("/bookings/**").authenticated()
                 .requestMatchers("/inscriptions/**").authenticated()

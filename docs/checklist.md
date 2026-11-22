@@ -30,8 +30,11 @@ Historias de usuario completadas. El detalle de cada una está en el [roadmap](.
 
 - [x] HU-15 Alta de un torneo
 - [ ] HU-16 Modificación de un torneo
+- [x] HU-29 Consultar torneos
+- [x] HU-30 Consultar inscripciones
 - [ ] HU-17 Baja de un torneo
 - [x] HU-18 Inscripción en un torneo
+- [x] HU-31 Cancelar inscripción
 - [ ] HU-19 Ocupación de pistas
 - [ ] HU-20 Generación del cuadro
 

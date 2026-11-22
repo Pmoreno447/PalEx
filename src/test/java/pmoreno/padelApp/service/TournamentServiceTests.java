@@ -13,7 +13,9 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,12 +27,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import pmoreno.padelApp.dto.Tournament.TournamentCreateRequest;
+import pmoreno.padelApp.dto.Tournament.TournamentListResponse;
 import pmoreno.padelApp.dto.Tournament.TournamentResponse;
 import pmoreno.padelApp.exceptions.BadRequestException;
 import pmoreno.padelApp.exceptions.ConflictException;
 import pmoreno.padelApp.exceptions.ResourceNotFoundException;
 import pmoreno.padelApp.model.Court;
 import pmoreno.padelApp.model.Tournament;
+import pmoreno.padelApp.model.TournamentState;
 import pmoreno.padelApp.repository.BookingRepository;
 import pmoreno.padelApp.repository.CourtRepository;
 import pmoreno.padelApp.repository.TournamentRepository;
@@ -121,5 +125,77 @@ public class TournamentServiceTests {
         assertEquals("La fecha de fin tiene que ser posterior a la de comienzo", exception.getMessage());
         // Se rechaza antes de tocar la base de datos
         verifyNoInteractions(courtRepository, bookingRepository, tournamentRepository);
+    }
+
+    // ---------- Consultar un torneo ----------
+
+    private Tournament tournament(TournamentState state){
+        Tournament tournament = new Tournament("Torneo Test", "**Torneo** de prueba", START, END,
+                                               new BigDecimal("15.00"), 16, new HashSet<>(Set.of(courtTest)));
+        tournament.setState(state);
+        return tournament;
+    }
+
+    @Test
+    @DisplayName("Should return an open tournament to a non admin user")
+    void shouldGetTournament_whenOpenAndNotAdmin(){
+        Tournament open = tournament(TournamentState.OPEN);
+        when(tournamentRepository.findByPublicIdAndState(open.getPublicId(), TournamentState.OPEN)).thenReturn(Optional.of(open));
+
+        TournamentResponse response = tournamentService.getTournament(open.getPublicId(), false);
+
+        assertEquals(open.getPublicId(), response.id());
+        assertEquals("Court Test", response.courts().get(0).name());
+    }
+
+    @Test
+    @DisplayName("Should not return a tournament that is not open to a non admin user")
+    void shouldNotGetTournament_whenNotOpenAndNotAdmin(){
+        Tournament finished = tournament(TournamentState.FINISHED);
+        when(tournamentRepository.findByPublicIdAndState(finished.getPublicId(), TournamentState.OPEN)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () ->
+            tournamentService.getTournament(finished.getPublicId(), false)
+        );
+    }
+
+    @Test
+    @DisplayName("Should return a tournament in any state to an admin")
+    void shouldGetTournament_whenAdmin(){
+        Tournament finished = tournament(TournamentState.FINISHED);
+        when(tournamentRepository.findByPublicId(finished.getPublicId())).thenReturn(Optional.of(finished));
+
+        TournamentResponse response = tournamentService.getTournament(finished.getPublicId(), true);
+
+        assertEquals(finished.getPublicId(), response.id());
+        // El admin no pasa por el filtro de estado
+        verify(tournamentRepository, never()).findByPublicIdAndState(any(), any());
+    }
+
+    // ---------- Listar torneos ----------
+
+    @Test
+    @DisplayName("Should list only open tournaments to a non admin user")
+    void shouldListOpenTournaments_whenNotAdmin(){
+        Tournament open = tournament(TournamentState.OPEN);
+        when(tournamentRepository.findByStateOrderByStartDateAsc(TournamentState.OPEN)).thenReturn(List.of(open));
+
+        List<TournamentListResponse> response = tournamentService.getTournaments(false);
+
+        assertEquals(1, response.size());
+        assertEquals(open.getPublicId(), response.get(0).id());
+        verify(tournamentRepository, never()).findAllByOrderByStartDateAsc();
+    }
+
+    @Test
+    @DisplayName("Should list every tournament to an admin")
+    void shouldListAllTournaments_whenAdmin(){
+        when(tournamentRepository.findAllByOrderByStartDateAsc())
+            .thenReturn(List.of(tournament(TournamentState.OPEN), tournament(TournamentState.FINISHED)));
+
+        List<TournamentListResponse> response = tournamentService.getTournaments(true);
+
+        assertEquals(2, response.size());
+        verify(tournamentRepository, never()).findByStateOrderByStartDateAsc(any());
     }
 }
