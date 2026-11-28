@@ -89,6 +89,24 @@ public class TournamentInscriptionServiceTests {
         assertEquals(tournamentTest, saved.getTournament());
         assertEquals(saved.getPublicId(), response.id());
         assertEquals("https://checkout.test/session", response.checkoutUrl());
+        // La plaza se aparta ya en PENDING
+        assertEquals(1, tournamentTest.getActualSlots());
+    }
+
+    @Test
+    @DisplayName("Should not create an inscription when the tournament is full")
+    void shouldNotCreateInscription_whenTournamentIsFull(){
+        tournamentTest.setActualSlots(16); // maxSlots = 16
+        when(userRepository.findByProviderId("user-1")).thenReturn(Optional.of(userTest));
+        when(tournamentRepository.findByPublicId(tournamentTest.getPublicId())).thenReturn(Optional.of(tournamentTest));
+
+        assertThrows(ConflictException.class, () ->
+            tournamentInscriptionService.tournamentRegistration("user-1", tournamentTest.getPublicId())
+        );
+
+        assertEquals(16, tournamentTest.getActualSlots());
+        verify(tournamentInscriptionRepository, never()).save(any());
+        verify(stripeService, never()).tournamentPayment(any());
     }
 
     @Test
@@ -120,6 +138,7 @@ public class TournamentInscriptionServiceTests {
     @DisplayName("Should refund and cancel a paid inscription within the cancellation period")
     void shouldCancelInscription_whenPaidAndOnTime(){
         TournamentRegistration registration = inscription(BookingState.COMPLETED, 7);
+        registration.getTournament().setActualSlots(1);
         when(tournamentInscriptionRepository.findByPublicIdAndUserProviderId(registration.getPublicId(), "user-1"))
             .thenReturn(Optional.of(registration));
 
@@ -127,6 +146,8 @@ public class TournamentInscriptionServiceTests {
 
         verify(stripeService).tournamentRefund(registration);
         assertEquals(BookingState.CANCELLED, registration.getState());
+        // Cancelar libera la plaza
+        assertEquals(0, registration.getTournament().getActualSlots());
     }
 
     @Test
@@ -157,6 +178,34 @@ public class TournamentInscriptionServiceTests {
         );
 
         verify(stripeService, never()).tournamentRefund(any());
+    }
+
+    // ---------- Webhook: confirmar y vencer ----------
+
+    @Test
+    @DisplayName("Should free the slot when a pending inscription expires")
+    void shouldFreeSlot_whenInscriptionExpires(){
+        TournamentRegistration registration = inscription(BookingState.PENDING, 7);
+        registration.getTournament().setActualSlots(1);
+        when(tournamentInscriptionRepository.findByPublicId(registration.getPublicId())).thenReturn(Optional.of(registration));
+
+        tournamentInscriptionService.expireInscription(registration.getPublicId());
+
+        assertEquals(BookingState.EXPIRED, registration.getState());
+        assertEquals(0, registration.getTournament().getActualSlots());
+    }
+
+    @Test
+    @DisplayName("Should keep the slot when a pending inscription is paid")
+    void shouldKeepSlot_whenInscriptionIsConfirmed(){
+        TournamentRegistration registration = inscription(BookingState.PENDING, 7);
+        registration.getTournament().setActualSlots(1);
+        when(tournamentInscriptionRepository.findByPublicId(registration.getPublicId())).thenReturn(Optional.of(registration));
+
+        tournamentInscriptionService.confirmInscription(registration.getPublicId(), "pi_test");
+
+        assertEquals(BookingState.COMPLETED, registration.getState());
+        assertEquals(1, registration.getTournament().getActualSlots());
     }
 
     // ---------- Consultar ----------

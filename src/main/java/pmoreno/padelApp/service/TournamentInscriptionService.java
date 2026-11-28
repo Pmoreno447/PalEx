@@ -128,7 +128,10 @@ public class TournamentInscriptionService {
             return;
         }
         if(tournamentInscription.get().getState() == BookingState.PENDING){
-            tournamentInscription.get().getTournament().decrementActualSlots();
+            // Solo al vencer se libera la plaza: al confirmar, la inscripción la sigue ocupando
+            if(newState == BookingState.EXPIRED){
+                tournamentInscription.get().getTournament().decrementActualSlots();
+            }
             tournamentInscription.get().setState(newState);
             tournamentInscription.get().setPaymentIntentId(paymentIntentId);
         }
