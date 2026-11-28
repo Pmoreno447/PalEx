@@ -54,12 +54,19 @@ public class TournamentInscriptionService {
             .orElseThrow(() -> new ResourceNotFoundException("El torneo con id " + tournamentId + "no existe"));
 
 
-        TournamentRegistration tournamentRegistration = new TournamentRegistration(tournament, user, LocalDateTime.now(), tournament.getEntryPrice(), BookingState.PENDING);
-        tournamentInscriptionRepository.save(tournamentRegistration);
+        if(tournament.getMaxSlots() != null && tournament.getActualSlots() >= tournament.getMaxSlots()){
+            throw new ConflictException("El torneo " + tournament.getName() + " está lleno");
+        }
+        else{
+            tournament.incrementActualSlots();
+            TournamentRegistration tournamentRegistration = new TournamentRegistration(tournament, user, LocalDateTime.now(), tournament.getEntryPrice(), BookingState.PENDING);
+            tournamentInscriptionRepository.save(tournamentRegistration);
+    
+            Session session = stripeService.tournamentPayment(tournamentRegistration);
+    
+            return new TournamentInscriptionResponse(tournamentRegistration.getPublicId(), session.getUrl());
+        }
 
-        Session session = stripeService.tournamentPayment(tournamentRegistration);
-
-        return new TournamentInscriptionResponse(tournamentRegistration.getPublicId(), session.getUrl());
     }
 
     // Solo la encuentra si es del usuario: si no es suya se trata como inexistente (404)
@@ -95,6 +102,7 @@ public class TournamentInscriptionService {
         if(tournamentRegistration.getState() == BookingState.COMPLETED){
             stripeService.tournamentRefund(tournamentRegistration);
             tournamentRegistration.setState(BookingState.CANCELLED);
+            tournamentRegistration.getTournament().decrementActualSlots();
         }
         else{
             throw new ConflictException("El estado de la inscripción no permite su cancelación");
@@ -120,6 +128,7 @@ public class TournamentInscriptionService {
             return;
         }
         if(tournamentInscription.get().getState() == BookingState.PENDING){
+            tournamentInscription.get().getTournament().decrementActualSlots();
             tournamentInscription.get().setState(newState);
             tournamentInscription.get().setPaymentIntentId(paymentIntentId);
         }

@@ -16,6 +16,7 @@ public record TournamentResponse(
     LocalDateTime endDate,
     BigDecimal entryPrice,
     Integer maxSlots,
+    Integer actualSlots,
     List<CourtResponse> courts
 ) {
     // Las pistas se cargan en diferido (LAZY): hay que llamarlo con la sesión de Hibernate abierta, dentro del service
@@ -28,6 +29,7 @@ public record TournamentResponse(
             tournament.getEndDate(),
             tournament.getEntryPrice(),
             tournament.getMaxSlots(),
+            tournament.getActualSlots(),
             tournament.getCourts().stream()
                 .map(CourtResponse::from)
                 .toList());

@@ -50,7 +50,7 @@ public class TournamentController {
     }
 
     @GetMapping("/{id}")
-    public TournamentResponse getMethodName(@PathVariable("id") UUID publicId, Authentication authentication) {
+    public TournamentResponse getTournament(@PathVariable("id") UUID publicId, Authentication authentication) {
         return tournamentService.getTournament(publicId, isAdmin(authentication));
     }
 

@@ -35,7 +35,7 @@ Historias de usuario completadas. El detalle de cada una está en el [roadmap](.
 - [ ] HU-17 Baja de un torneo
 - [x] HU-18 Inscripción en un torneo
 - [x] HU-31 Cancelar inscripción
-- [ ] HU-19 Ocupación de pistas
+- [x] HU-19 Ocupación de pistas
 - [ ] HU-20 Generación del cuadro
 
 ## EP-05. Gestión del acceso a la pista

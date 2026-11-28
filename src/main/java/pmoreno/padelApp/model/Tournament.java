@@ -47,6 +47,10 @@ public class Tournament {
 
     private Integer maxSlots;
 
+    // Plazas ocupadas: todo torneo empieza sin inscritos
+    @Column (nullable = false)
+    private Integer actualSlots = 0;
+
     // Todo torneo nace abierto a inscripciones
     @Enumerated (EnumType.STRING)
     @Column (nullable = false)
@@ -125,6 +129,22 @@ public class Tournament {
 
     public void setMaxSlots(Integer maxSlots){
         this.maxSlots = maxSlots;
+    }
+
+    public Integer getActualSlots(){
+        return actualSlots;
+    }
+
+    public void setActualSlots(Integer actualSlots){
+        this.actualSlots = actualSlots;
+    }
+
+    public void incrementActualSlots(){
+        this.actualSlots += 1;
+    }
+
+    public void decrementActualSlots(){
+        this.actualSlots -= 1;
     }
 
     public TournamentState getState(){

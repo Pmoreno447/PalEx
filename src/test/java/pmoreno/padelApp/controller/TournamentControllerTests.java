@@ -107,7 +107,7 @@ public class TournamentControllerTests {
         UUID tournamentId = UUID.randomUUID();
         when(tournamentService.createTournament(any()))
             .thenReturn(new TournamentResponse(tournamentId, "Torneo Nuevo", "**Torneo** de prueba", START, END,
-                                               new BigDecimal("15.0"), 16, List.of(court)));
+                                               new BigDecimal("15.0"), 16, 0, List.of(court)));
 
         restTestClient.post()
             .uri("/tournaments")
@@ -170,7 +170,7 @@ public class TournamentControllerTests {
     private TournamentResponse tournamentResponse(UUID id){
         CourtResponse court = new CourtResponse(1L, "Pista 1", BigDecimal.TEN, 90, LocalTime.of(9, 0), LocalTime.of(23, 0));
         return new TournamentResponse(id, "Torneo Nuevo", "**Torneo** de prueba", START, END,
-                                      new BigDecimal("15.0"), 16, List.of(court));
+                                      new BigDecimal("15.0"), 16, 0, List.of(court));
     }
 
     @Test
